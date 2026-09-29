@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apuração Direção Positiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --teal:#00A39C; --deep:#00726D; --abyss:#0C3B39; --ink:#1B2A2A; --text:#2F3B3B; --muted:#5E6C6C;
+  --mist:#EEF7F6; --line:#CFE7E5; --paper:#FFFFFF; --ground:#F6FAFA; --gold:#B8860B; --goldbg:#FFF6DC;
+  --ok:#0F7B4B; --okbg:#E3F5EC; --warn:#9A5B00; --warnbg:#FFF1DA; --bad:#B42318; --badbg:#FDECEA;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--ground);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:var(--display);color:var(--ink);margin:0;line-height:1.1;font-weight:700}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.top{background:var(--deep);color:#fff}
+.top .in{max-width:1320px;margin:0 auto;padding:14px clamp(16px,3vw,32px);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top svg{width:34px;height:34px;flex:none}
+.top h1{color:#fff;font-size:24px}
+.top small{display:block;font-family:var(--body);font-weight:500;font-size:14px;color:#CDEFEC}
+.top .month{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:#CDEFEC}
+.top .month input{font:600 15px var(--body);border:0;border-radius:8px;padding:7px 10px;width:150px}
+main{max-width:1320px;margin:0 auto;padding:22px clamp(16px,3vw,32px) 60px;display:grid;gap:18px}
+main > *,.setup > *,.win-grid > *{min-width:0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,2vw,24px)}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.card-h h2{font-size:22px}
+.card-h .step{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+.card-h p{font-size:14px;color:var(--muted)}
+.setup{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:18px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.f label{display:block;font-weight:600;font-size:14px;color:var(--ink);margin-bottom:6px}
+.f .hint{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:4px}
+.f .box{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.f .box:focus-within{border-color:var(--teal)}
+.f .box span{padding:0 10px;color:var(--muted);font-size:14px;background:var(--mist);align-self:stretch;display:flex;align-items:center}
+.f input{font:600 17px var(--body);color:var(--ink);border:0;padding:10px 12px;width:100%;min-width:0;background:transparent;font-variant-numeric:tabular-nums}
+.f input:focus{outline:none}
+.f.req .box{border-color:#E6C98A;background:#FFFCF3}
+.drops{display:grid;gap:12px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;background:var(--ground);cursor:pointer;transition:border-color .2s,background .2s}
+.drop:hover,.drop.over{border-color:var(--teal);background:var(--mist)}
+.drop.done{border-style:solid;border-color:var(--teal);background:#fff}
+.drop .ic{width:44px;height:44px;border-radius:10px;background:var(--mist);display:grid;place-items:center}
+.drop .ic svg{width:24px;height:24px;stroke:var(--deep);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.drop.done .ic{background:var(--teal)} .drop.done .ic svg{stroke:#fff}
+.drop b{display:block;font-family:var(--display);font-size:18px;color:var(--ink)}
+.drop small{display:block;font-size:13px;color:var(--muted)}
+.drop input{display:none}
+.gd{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:linear-gradient(0deg,#fff,#fff)}
+.gd-h{display:flex;gap:12px;align-items:center}
+.gd-h svg{width:28px;height:28px;flex:none;stroke:var(--deep);fill:none;stroke-width:1.7;stroke-linejoin:round}
+.gd-h b{display:block;font-family:var(--display);font-size:18px;color:var(--ink)}
+.gd-h small{display:block;font-size:13px;color:var(--muted)}
+.gd-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.gd-row select{font:600 15px var(--body);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;color:var(--ink)}
+.gd-link{font-size:14px;color:var(--deep);margin-left:auto}
+.gd-st{font-size:14px;margin-top:10px;color:var(--muted)}
+.gd-st.ok{color:var(--ok)} .gd-st.err{color:var(--bad)}
+.or{font-size:13px;color:var(--muted);text-align:center;margin:12px 0 10px;position:relative}
+.msg{font-size:14px;padding:10px 12px;border-radius:10px}
+.msg.err{background:var(--badbg);color:var(--bad)}
+details.rules{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+details.rules summary{cursor:pointer;font-weight:600;color:var(--deep);font-size:15px}
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:14px}
+.rules-grid .f input{font-size:15px;padding:8px 10px}
+.rules-note{font-size:13px;color:var(--muted);margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.kpi{background:#fff;padding:16px 18px}
+.kpi span{display:block;font-size:13px;color:var(--muted);font-weight:500}
+.kpi b{display:block;font-family:var(--display);font-weight:700;font-size:28px;color:var(--ink);line-height:1.15;margin-top:2px}
+.kpi small{display:block;font-size:12px;color:var(--muted)}
+.kpi.hl{background:var(--mist)} .kpi.hl b{color:var(--deep)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 12px;font-weight:600;font-size:14px;font-family:var(--body)}
+.pill.ok{background:var(--okbg);color:var(--ok)} .pill.bad{background:var(--badbg);color:var(--bad)} .pill.warn{background:var(--warnbg);color:var(--warn)} .pill.neu{background:var(--mist);color:var(--muted)}
+.pending{display:flex;gap:12px;align-items:center;background:var(--warnbg);color:var(--warn);border-radius:12px;padding:14px 16px;font-weight:500}
+.win-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.tiers{display:grid;gap:10px}
+.tier h3{font-size:15px;font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.tier h3 b{color:var(--deep);font-size:18px;letter-spacing:0}
+.wl{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 18px}
+.wl li{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:baseline;padding:6px 0}
+.wl .p{font-family:var(--display);font-weight:700;color:var(--teal)}
+.wl .n{font-weight:600;color:var(--ink)}
+.wl .n small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.wl .r{font-size:14px;color:var(--muted)}
+.wl li.sec .n::after{content:"Seccionada";margin-left:8px;font-size:11px;font-weight:600;color:var(--warn);background:var(--warnbg);border-radius:99px;padding:1px 8px}
+.side{display:grid;gap:12px}
+.side .card{padding:16px}
+.side h3{font-size:17px;margin-bottom:8px}
+.side p{font-size:13px;color:var(--muted)}
+.btn{font:600 15px var(--body);border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 14px;cursor:pointer}
+.btn:hover{background:var(--mist)}
+.btn.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.pri:hover{background:var(--deep)}
+.sec-f{display:grid;gap:8px;margin-top:10px}
+.sec-f input,.sec-f select,.tbl-tools input{font:500 15px var(--body);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;background:#fff;color:var(--ink)}
+.tbl-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tbl-tools input{max-width:300px}
+.tbl-tools label{font-size:14px;display:flex;gap:6px;align-items:center}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1080px;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:var(--mist);font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--deep);cursor:pointer;user-select:none}
+th.l,td.l{text-align:left}
+td{font-variant-numeric:tabular-nums;color:var(--text)}
+td.name{font-weight:600;color:var(--ink);white-space:normal;min-width:220px}
+tr.win td{background:#F3FBF9}
+tr.win td.prize{color:var(--deep);font-weight:700}
+tr.out td{color:#98A4A4}
+tr.out td.name{color:#98A4A4;text-decoration:line-through}
+td select{font:500 13px var(--body);border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:#fff;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-weight:600;z-index:10}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.win-grid{grid-template-columns:1fr}}
+@media (max-width:860px){.setup{grid-template-columns:1fr}}
+@media (max-width:560px){.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="in">
+  <svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#fff"/><path d="M23 10.5A9 9 0 1 1 18.5 7.4" stroke="#00A39C" stroke-width="2.4"/><path d="M11 16l4 4 9-10" stroke="#00A39C" stroke-width="3"/></svg>
+  <div><h1>Apuração do Direção Positiva 2.0</h1><small>Identificação automática dos ganhadores · Linhas</small></div>
+  <label class="month" for="mes">Mês de referência <input id="mes" type="text" placeholder="ex.: SETEMBRO"></label>
+</div></header>
+
+<main>
+  <div class="setup">
+    <section class="card" aria-labelledby="h-dados">
+      <div class="card-h"><div><div class="step">Passo 1</div><h2 id="h-dados">Dados do mês</h2></div><p>Informe os números do abastecimento do mês.</p></div>
+      <div class="fields">
+        <div class="f"><label for="kmMin">KM mínimo por motorista</label><div class="box"><input id="kmMin" type="number" step="1" min="0" inputmode="decimal"><span>km</span></div><span class="hint">Abaixo disso: “Baixa KM”</span></div>
+        <div class="f req"><label for="kmAb">KM rodada do setor</label><div class="box"><input id="kmAb" type="number" step="0.01" min="0" inputmode="decimal"><span>km</span></div><span class="hint">KM real do abastecimento</span></div>
+        <div class="f req"><label for="resultado">Resultado realizado</label><div class="box"><input id="resultado" type="number" step="0.0001" min="0" inputmode="decimal"><span>km/l</span></div><span class="hint">Média real do abastecimento</span></div>
+        <div class="f req"><label for="meta">Meta do orçamento</label><div class="box"><input id="meta" type="number" step="0.0001" min="0" inputmode="decimal"><span>km/l</span></div></div>
+        <div class="f req"><label for="preco">Valor do litro do diesel</label><div class="box"><span>R$</span><input id="preco" type="number" step="0.01" min="0" inputmode="decimal"></div></div>
+      </div>
+      <details class="rules">
+        <summary>Regras do cálculo (valores padrão do programa)</summary>
+        <div class="rules-grid">
+          <div class="f"><label for="pct">Parte para o programa</label><div class="box"><input id="pct" type="number" step="0.1"><span>%</span></div></div>
+          <div class="f"><label for="v1">Faixa 1</label><div class="box"><span>R$</span><input id="v1" type="number" step="1"></div></div>
+          <div class="f"><label for="v2">Faixa 2</label><div class="box"><span>R$</span><input id="v2" type="number" step="1"></div></div>
+          <div class="f"><label for="v3">Faixa 3</label><div class="box"><span>R$</span><input id="v3" type="number" step="1"></div></div>
+          <div class="f"><label for="v4">Faixa 4</label><div class="box"><span>R$</span><input id="v4" type="number" step="1"></div></div>
+          <div class="f"><label for="wD">Peso diesel</label><div class="box"><input id="wD" type="number" step="1"><span>%</span></div></div>
+          <div class="f"><label for="wC">Peso eventos consumo</label><div class="box"><input id="wC" type="number" step="1"><span>%</span></div></div>
+          <div class="f"><label for="wS">Peso eventos segurança</label><div class="box"><input id="wS" type="number" step="1"><span>%</span></div></div>
+          <div class="f"><label for="wG">Peso gestão de consequências</label><div class="box"><input id="wG" type="number" step="1"><span>%</span></div></div>
+          <div class="f"><label for="gA">GC nota 100 até</label><div class="box"><input id="gA" type="number" step="1"><span>pts</span></div></div>
+          <div class="f"><label for="gB">GC nota 0 a partir de</label><div class="box"><input id="gB" type="number" step="1"><span>pts</span></div></div>
+        </div>
+        <p class="rules-note">Nº de premiados = bolsa ÷ média entre a maior e a menor faixa (padrão R$ 225), arredondado. Cada faixa recebe o nº de premiados ÷ 4 arredondado para cima, de cima para baixo; a última faixa fica com o restante. GC entre os dois limites vale nota 95. <button type="button" class="btn" id="reset-rules" style="margin-left:6px;padding:4px 10px;font-size:13px">Restaurar padrão</button></p>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="h-arq">
+      <div class="card-h"><div><div class="step">Passo 2</div><h2 id="h-arq">Planilhas do sistema</h2></div></div>
+      <div class="gd" id="gd">
+        <div class="gd-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l6 10-4 7H6l-4-7z"/><path d="M8 3 2 13M16 3l-8 17M22 13H6"/></svg><div><b>Google Drive</b><small>Pasta mensal do programa · os arquivos são identificados pelo mês no nome, ex.: “(Agosto/26)”</small></div></div>
+        <div class="gd-row">
+          <button type="button" class="btn pri" id="gd-find">Buscar planilhas no Drive</button>
+          <select id="gd-month" aria-label="Mês encontrado no Drive" hidden></select>
+          <button type="button" class="btn" id="gd-load" hidden>Carregar mês</button>
+          <a class="gd-link" id="gd-open" target="_blank" rel="noopener">Abrir pasta</a>
+        </div>
+        <p class="gd-st" id="gd-st" aria-live="polite"></p>
+      </div>
+      <p class="or">ou carregue os arquivos manualmente</p>
+      <div class="drops">
+        <label class="drop" id="d-tw"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span><b>Telemetria</b><small id="s-tw">Transit Way – Viagens do Dia (.xlsx) · clique ou arraste</small></span><input type="file" id="f-tw" accept=".xlsx,.xls,.csv"></label>
+        <label class="drop" id="d-gc"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><span><b>Gestão de consequências</b><small id="s-gc">Pontuação dos colaboradores (.xlsx) · clique ou arraste</small></span><input type="file" id="f-gc" accept=".xlsx,.xls,.csv"></label>
+        <p class="msg err" id="f-err" hidden></p>
+        <p style="font-size:13px;color:var(--muted)">As planilhas são lidas só neste navegador. O painel identifica cada uma pelo cabeçalho e cruza pela matrícula (chapa).</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="h-res">
+    <div class="card-h"><div><div class="step">Resultado geral</div><h2 id="h-res">Bolsa do mês</h2></div><span id="meta-pill"></span></div>
+    <div id="pend" class="pending" hidden></div>
+    <div class="kpis num" id="kpis">
+      <div class="kpi"><span>Litros na meta</span><b id="k-lm">—</b><small id="k-lr"></small></div>
+      <div class="kpi"><span>Economia de diesel</span><b id="k-el">—</b><small>litros</small></div>
+      <div class="kpi"><span>Valor economizado</span><b id="k-er">—</b><small id="k-pr"></small></div>
+      <div class="kpi hl"><span>Bolsa de premiação</span><b id="k-b">—</b><small id="k-bp"></small></div>
+      <div class="kpi hl"><span>Nº de premiados</span><b id="k-n">—</b><small id="k-nf"></small></div>
+      <div class="kpi"><span>Total a pagar</span><b id="k-t">—</b><small id="k-td"></small></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-win">
+    <div class="card-h"><div><div class="step">Ganhadores</div><h2 id="h-win">Quem será premiado</h2></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" id="copy">Copiar lista</button><button type="button" class="btn pri" id="xlsx">Exportar planilha Excel</button></div></div>
+    <div class="win-grid">
+      <div id="tiers" class="tiers"><p class="empty">Os ganhadores aparecem aqui depois de preencher os dados do mês e carregar as duas planilhas.</p></div>
+      <aside class="side">
+        <div class="card">
+          <h3>Linha seccionada (sem rede CAN)</h3>
+          <p>1 ganhador escolhido pela gestão, que entra no lugar do último colocado.</p>
+          <div class="sec-f">
+            <input id="sec-m" type="text" placeholder="Matrícula" inputmode="numeric">
+            <input id="sec-n" type="text" placeholder="Nome do motorista">
+            <select id="sec-p" aria-label="Posição no ranking"></select>
+            <button type="button" class="btn" id="sec-clear">Remover seccionada</button>
+          </div>
+        </div>
+        <div class="card"><h3>Exclusões manuais</h3><p id="exc-sum">Falta ou suspensão, acidente grave e veto do gestor são marcados na tabela abaixo, na coluna “Excluir”.</p></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-rank">
+    <div class="card-h"><div><div class="step">Ranking completo</div><h2 id="h-rank">Todos os motoristas</h2></div><p id="rank-count"></p></div>
+    <div class="tbl-tools">
+      <input id="q" type="search" placeholder="Buscar por nome ou matrícula">
+      <label><input type="checkbox" id="only-el"> Só elegíveis</label>
+    </div>
+    <div class="tw"><table class="num">
+      <thead><tr>
+        <th data-k="rank">Pos.</th><th class="l" data-k="m">Matrícula</th><th class="l" data-k="n">Motorista</th><th data-k="km">KM</th>
+        <th data-k="d">Diesel</th><th data-k="c">Consumo</th><th data-k="s">Segurança</th><th data-k="g">GC pts</th><th data-k="pg">Nota GC</th>
+        <th data-k="res">Nota final</th><th class="l" data-k="st">Situação</th><th data-k="prize">Prêmio</th><th class="l">Excluir</th>
+      </tr></thead>
+      <tbody id="tb"><tr><td colspan="13" class="empty">Carregue a planilha de telemetria para ver o ranking.</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===================== CONFIGURAÇÃO ===================== */
+/* driveFolderId  : id da pasta do Drive onde as planilhas do mês são colocadas.
+   googleApiKey   : chave da API do Google Drive (necessária só fora do Claude, ex.: GitHub Pages,
+                    com a pasta compartilhada como "qualquer pessoa com o link").
+   googleClientId : opcional. ID do cliente OAuth, para ler a pasta sem deixá-la pública
+                    (cada pessoa entra com a própria conta Google). Veja o LEIA-ME. */
+window.DP_CONFIG = {
+  driveFolderId: '1fIHrn6BwqEJFy_vSjurnmZA_QmOl7i45',
+  googleApiKey: '',
+  googleClientId: ''
+};
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const DEF={kmMin:800,pct:25,v1:300,v2:250,v3:200,v4:150,wD:35,wC:20,wS:20,wG:25,gA:21,gB:39};
+  const FIELDS=['kmMin','kmAb','resultado','meta','preco','pct','v1','v2','v3','v4','wD','wC','wS','wG','gA','gB'];
+  const KEY='dp-apuracao-v1';
+  let S={vals:{},mes:'',tw:null,gc:null,twName:'',gcName:'',exc:{},sec:{m:'',n:'',p:''}};
+  let sortK='res', sortDir=-1;
+  const load=()=>{try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s)}catch(e){}};
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+  const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const fmt=(v,d)=>v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const toNum=v=>{ if(v==null||v==='') return NaN; if(typeof v==='number') return v; const s=String(v).trim().replace(/\s/g,''); return s.includes(',')? +s.replace(/\./g,'').replace(',','.') : +s; };
+  const normM=m=>String(m==null?'':m).trim().replace(/\.0+$/,'').replace(/^0+(?=\d)/,'');
+  const nice=s=>String(s||'').replace(/\s*-\s*\d+\s*$/,'').replace(/\s+/g,' ').trim();
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function toast(t){const e=$('toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2200)}
+
+  /* ---- leitura das planilhas ---- */
+  function parseBook(buf){
+    const wb=XLSX.read(buf,{type:'array'}); const out=[];
+    wb.SheetNames.forEach(n=>out.push(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''})));
+    return out;
+  }
+  const H=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
+  function detect(sheets){
+    for(const rows of sheets){
+      for(let i=0;i<Math.min(rows.length,15);i++){
+        const h=rows[i].map(H);
+        if(h.includes('MATRICULA')&&h.includes('KM')&&h.includes('META')&&h.includes('REAL')) return {type:'tw',data:readTW(rows,i,h)};
+        if(h.includes('CHAPA')&&h.some(x=>x.startsWith('PONTUA'))) return {type:'gc',data:readGC(rows,i,h)};
+      }
+    }
+    return null;
+  }
+  function readTW(rows,i,h){
+    const iM=h.indexOf('MATRICULA'), iN=h.indexOf('MOTORISTA'), iK=h.indexOf('KM'), iR=h.indexOf('REAL');
+    const ponts=h.map((x,k)=>x==='PONT.'||x==='PONT'?k:-1).filter(k=>k>iR);
+    const evs=h.map((x,k)=>x==='EVENTOS'?k:-1).filter(k=>k>iR);
+    const iMeta=h.indexOf('META');
+    return rows.slice(i+1).filter(r=>String(r[iM]).trim()!=='' && !isNaN(toNum(r[iK]))).map(r=>({
+      m:normM(r[iM]), n:nice(r[iN]), km:toNum(r[iK]), metaL:toNum(r[iMeta]), realL:toNum(r[iR]),
+      d:toNum(r[ponts[0]]), ec:toNum(r[evs[0]]), c:toNum(r[ponts[1]]), es:toNum(r[evs[1]]), s:toNum(r[ponts[2]])
+    }));
+  }
+  function readGC(rows,i,h){
+    const iC=h.indexOf('CHAPA'), iP=h.findIndex(x=>x.startsWith('PONTUA')); const map={};
+    rows.slice(i+1).forEach(r=>{ const m=normM(r[iC]); if(m){ const v=toNum(r[iP]); map[m]=(map[m]||0)+(isNaN(v)?0:v); } });
+    return map;
+  }
+  function ingest(buf,name){
+    const got=detect(parseBook(buf));
+    if(!got) throw new Error('Não reconheci “'+name+'”. A telemetria precisa das colunas Matrícula, KM, Meta e Real; a gestão de consequências, das colunas CHAPA e PONTUAÇÃO.');
+    if(got.type==='tw'){S.tw=got.data;S.twName=name} else {S.gc=got.data;S.gcName=name}
+    return got.type;
+  }
+  async function handle(file,hint){
+    $('f-err').hidden=true;
+    try{
+      const t=ingest(await file.arrayBuffer(),file.name);
+      if(hint && hint!==t) toast('Planilha colocada no lugar trocado. Ajustei sozinho.');
+      save(); render();
+    }catch(e){ $('f-err').textContent=e.message||String(e); $('f-err').hidden=false; }
+  }
+
+  /* ---- Google Drive: 1) conector do Claude  2) API do Google (GitHub)  3) manual ---- */
+  const CFG=window.DP_CONFIG||{}; const FOLDER=CFG.driveFolderId||'';
+  const MESES=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const MESES_PT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const low=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  function monthOf(title){
+    const t=low(title); let mi=-1, y=null, m;
+    if((m=t.match(/(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:[\/\-_. ]\s*|de\s+)?(\d{4}|\d{2})?/))){ mi=MESES.indexOf(m[1]); y=m[2]?+m[2]:null; }
+    else if((m=t.match(/\b(\d{1,2})[\/\-_.](20\d{2}|\d{2})\b/))){ mi=+m[1]-1; y=+m[2]; }
+    if(mi<0||mi>11) return null; if(y!=null&&y<100) y+=2000;
+    return {mi,y,key:(y||0)*100+mi+1,label:MESES_PT[mi]+(y?'/'+String(y).slice(-2):'')};
+  }
+  const kindOf=t=>{ t=low(t); return (t.includes('transit')||t.includes('viagens')||t.includes('telemetria'))?'tw':((t.includes('pontua')||t.includes('consequ'))?'gc':null); };
+  const b64buf=b=>{ const s=atob(b); const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u.buffer; };
+  const GSHEET='application/vnd.google-apps.spreadsheet', XLSXM='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  let MODE=null, MCP=null, TOKEN=null, MONTHS=[];
+  const gst=(t,c)=>{ const e=$('gd-st'); e.textContent=t; e.className='gd-st'+(c?' '+c:''); };
+  if(FOLDER) $('gd-open').href='https://drive.google.com/drive/folders/'+FOLDER; else $('gd-open').hidden=true;
+  async function driveMode(){
+    if(MODE) return MODE;
+    if(window.claude&&typeof window.claude.use==='function'){ try{ MCP=await window.claude.use('mcp'); }catch(e){ MCP=null; } if(MCP) return MODE='claude'; }
+    if(CFG.googleApiKey||CFG.googleClientId) return MODE='api';
+    return MODE='none';
+  }
+  function mcpMsg(e){
+    const c=e&&e.code;
+    if(c==='server_not_connected') return 'Conecte o Google Drive em claude.ai › Configurações › Conectores e tente de novo.';
+    if(c==='needs_reauth') return 'A conexão com o Google Drive expirou. Reconecte em claude.ai › Configurações › Conectores.';
+    if(c==='selection_required') return 'Há mais de uma conta do Google Drive conectada. Escolha qual usar no aviso do Claude e tente de novo.';
+    if(c==='not_in_manifest') return 'O acesso ao Google Drive não foi permitido para esta página.';
+    if(c==='blocked_by_policy'||c==='approval_required') return 'A política da organização bloqueou o acesso ao Google Drive por esta página.';
+    if(c==='tool_error') return 'O Google Drive recusou o pedido: '+(e.message||'erro desconhecido')+'. Confira se a pasta está compartilhada com você.';
+    if(c==='not_granted'||c==='capability_disabled'||c==='capability_removed') return 'Esta visualização não consegue usar o Google Drive. Carregue os arquivos manualmente.';
+    return 'Não foi possível falar com o Google Drive agora ('+(c||'erro')+'). Tente de novo em instantes.';
+  }
+  async function callDrive(tool,input){
+    try{ return (await MCP.callTool('Google Drive',tool,input,{cache:false})).payload; }
+    catch(e){ if(e&&e.retryable){ await new Promise(r=>setTimeout(r,Math.min(e.retryAfterMs||1500,8000)+Math.random()*600)); return (await MCP.callTool('Google Drive',tool,input,{cache:false})).payload; } throw e; }
+  }
+  function loadGsi(){ return new Promise((ok,no)=>{ if(window.google&&google.accounts&&google.accounts.oauth2) return ok(); const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.onload=()=>ok(); s.onerror=()=>no(new Error('Não consegui carregar o login do Google.')); document.head.appendChild(s); }); }
+  async function getToken(){
+    if(TOKEN||!CFG.googleClientId) return TOKEN; await loadGsi();
+    return new Promise((ok,no)=>{ const c=google.accounts.oauth2.initTokenClient({client_id:CFG.googleClientId,scope:'https://www.googleapis.com/auth/drive.readonly',callback:r=>{ if(r&&r.access_token){TOKEN=r.access_token;ok(TOKEN)} else no(new Error('Login no Google cancelado.')); }}); c.requestAccessToken(); });
+  }
+  async function gapi(path,params,asBuf){
+    const tok=await getToken(); const q=new URLSearchParams(params||{}); if(CFG.googleApiKey&&!tok) q.set('key',CFG.googleApiKey);
+    const r=await fetch('https://www.googleapis.com/drive/v3/'+path+'?'+q,{headers:tok?{Authorization:'Bearer '+tok}:{}});
+    if(!r.ok){ let m=''; try{ m=(await r.json()).error.message }catch(e){} throw new Error(r.status===403||r.status===404?'Sem acesso à pasta ('+r.status+'). Confira se ela está compartilhada como “qualquer pessoa com o link” e se a chave da API está liberada para este site.':'Erro do Google Drive ('+r.status+') '+m); }
+    return asBuf?r.arrayBuffer():r.json();
+  }
+  async function listFolder(){
+    const out=[];
+    if(MODE==='claude'){
+      let tok=null; for(let p=0;p<10;p++){ const inp={query:"parentId = '"+FOLDER+"'",excludeContentSnippets:true,pageSize:100}; if(tok) inp.pageToken=tok;
+        const pl=await callDrive('search_files',inp); const fs=(pl&&pl.files)||[]; fs.forEach(f=>out.push({id:f.id,name:f.title||f.name||'',mimeType:f.mimeType,modifiedTime:f.modifiedTime})); tok=pl&&pl.nextPageToken; if(!tok||!fs.length) break; }
+    } else {
+      let tok=null; for(let p=0;p<10;p++){ const pr={q:"'"+FOLDER+"' in parents and trashed=false",fields:'nextPageToken,files(id,name,mimeType,modifiedTime)',pageSize:'200',supportsAllDrives:'true',includeItemsFromAllDrives:'true'}; if(tok) pr.pageToken=tok;
+        const j=await gapi('files',pr); (j.files||[]).forEach(f=>out.push(f)); tok=j.nextPageToken; if(!tok) break; }
+    }
+    return out;
+  }
+  async function download(f){
+    if(MODE==='claude'){ const inp={fileId:f.id}; if(f.mimeType===GSHEET) inp.exportMimeType=XLSXM; const pl=await callDrive('download_file_content',inp); if(!pl||!pl.content) throw new Error('O Drive não devolveu o conteúdo de “'+f.name+'”.'); return b64buf(pl.content); }
+    return f.mimeType===GSHEET ? gapi('files/'+f.id+'/export',{mimeType:XLSXM},true) : gapi('files/'+f.id,{alt:'media',supportsAllDrives:'true'},true);
+  }
+  $('gd-find').addEventListener('click',async()=>{
+    const btn=$('gd-find'); btn.disabled=true; gst('Procurando planilhas na pasta…');
+    try{
+      if(!FOLDER) throw new Error('Nenhuma pasta configurada.');
+      const mode=await driveMode();
+      if(mode==='none'){ gst('Fora do Claude, a busca no Drive precisa da chave da API do Google na configuração do painel (veja o LEIA-ME). Enquanto isso, carregue os arquivos manualmente.','err'); return; }
+      const files=(await listFolder()).filter(f=>/\.(xlsx|xls|csv)$/i.test(f.name)||f.mimeType===GSHEET||f.mimeType===XLSXM||/excel|spreadsheet|csv/.test(f.mimeType||''));
+      const map={};
+      files.forEach(f=>{ const mo=monthOf(f.name), k=kindOf(f.name); if(!mo||!k) return; const e=map[mo.key]||(map[mo.key]={key:mo.key,label:mo.label,mi:mo.mi}); if(!e[k]||String(f.modifiedTime)>String(e[k].modifiedTime)) e[k]=f; });
+      MONTHS=Object.values(map).sort((a,b)=>b.key-a.key);
+      if(!MONTHS.length){ gst('Não encontrei planilhas com o mês no nome. Use nomes como “Transit Way - Viagens do Dia (Setembro/26)” e “Pontuação dos colaboradores (Setembro/26)”.','err'); return; }
+      const sel=$('gd-month');
+      sel.innerHTML=MONTHS.map((m,i)=>'<option value="'+i+'">'+m.label+(m.tw&&m.gc?'':(m.tw?' · falta gestão de consequências':' · falta telemetria'))+'</option>').join('');
+      const best=MONTHS.findIndex(m=>m.tw&&m.gc); sel.value=String(best<0?0:best);
+      const want=MONTHS.findIndex(m=>m.label===S.driveMonth); if(want>=0) sel.value=String(want);
+      sel.hidden=false; $('gd-load').hidden=false;
+      gst(MONTHS.length+(MONTHS.length>1?' meses encontrados':' mês encontrado')+'. Escolha o mês e clique em “Carregar mês”.','ok');
+    }catch(e){ gst(e&&e.code?mcpMsg(e):(e.message||String(e)),'err'); }
+    finally{ btn.disabled=false; }
+  });
+  $('gd-load').addEventListener('click',async()=>{
+    const m=MONTHS[+$('gd-month').value]; if(!m) return; const btn=$('gd-load'); btn.disabled=true;
+    try{
+      const got=[];
+      for(const k of ['tw','gc']){ if(!m[k]) continue; gst('Baixando “'+m[k].name+'”…'); const t=ingest(await download(m[k]),m[k].name); got.push(t); }
+      S.driveMonth=m.label; S.mes=MESES_PT[m.mi].toUpperCase(); $('mes').value=S.mes; save(); render();
+      const miss=['tw','gc'].filter(k=>!m[k]).map(k=>k==='tw'?'telemetria':'gestão de consequências');
+      gst('Carregado: '+m.label+' ('+got.length+(got.length>1?' planilhas':' planilha')+').'+(miss.length?' Falta na pasta: '+miss.join(' e ')+'.':''), miss.length?'err':'ok');
+    }catch(e){ gst(e&&e.code?mcpMsg(e):(e.message||String(e)),'err'); }
+    finally{ btn.disabled=false; }
+  });
+  [['d-tw','f-tw','tw'],['d-gc','f-gc','gc']].forEach(([d,f,t])=>{
+    const dz=$(d);
+    $(f).addEventListener('change',e=>{ if(e.target.files[0]) handle(e.target.files[0],t); e.target.value=''; });
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over'); [...e.dataTransfer.files].forEach(fl=>handle(fl,t));});
+  });
+
+  /* ---- campos ---- */
+  FIELDS.forEach(k=>{ const el=$(k); if(S.vals[k]==null && DEF[k]!=null) S.vals[k]=DEF[k]; });
+  function syncInputs(){ FIELDS.forEach(k=>{ const v=S.vals[k]; $(k).value=(v==null||v==='')?'':v; }); $('mes').value=S.mes||''; $('sec-m').value=S.sec.m||''; $('sec-n').value=S.sec.n||''; }
+  FIELDS.forEach(k=>$(k).addEventListener('input',e=>{ S.vals[k]=e.target.value; save(); render(); }));
+  $('mes').addEventListener('input',e=>{S.mes=e.target.value;save()});
+  $('reset-rules').addEventListener('click',()=>{ ['pct','v1','v2','v3','v4','wD','wC','wS','wG','gA','gB'].forEach(k=>S.vals[k]=DEF[k]); syncInputs(); save(); render(); });
+  ['sec-m','sec-n'].forEach(id=>$(id).addEventListener('input',()=>{ S.sec.m=$('sec-m').value.trim(); S.sec.n=$('sec-n').value.trim();
+    if(S.sec.m && S.tw){ const f=S.tw.find(x=>x.m===normM(S.sec.m)); if(f && !S.sec.n){ S.sec.n=f.n; $('sec-n').value=f.n; } }
+    save(); render(); }));
+  $('sec-p').addEventListener('change',e=>{S.sec.p=e.target.value;save();render()});
+  $('sec-clear').addEventListener('click',()=>{S.sec={m:'',n:'',p:''};syncInputs();save();render()});
+  $('q').addEventListener('input',renderTable); $('only-el').addEventListener('change',renderTable);
+  document.querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',()=>{ const k=th.dataset.k; if(sortK===k) sortDir*=-1; else {sortK=k; sortDir=(k==='n'||k==='m'||k==='st')?1:-1;} renderTable(); }));
+
+  /* ---- cálculo ---- */
+  let R=null;
+  function compute(){
+    const v=k=>toNum(S.vals[k]);
+    const P={kmMin:v('kmMin'),kmAb:v('kmAb'),res:v('resultado'),meta:v('meta'),preco:v('preco'),pct:v('pct')/100,vals:[v('v1'),v('v2'),v('v3'),v('v4')],w:{d:v('wD')/100,c:v('wC')/100,s:v('wS')/100,g:v('wG')/100},gA:v('gA'),gB:v('gB')};
+    const out={P,missing:[]};
+    if(isNaN(P.kmAb)||P.kmAb<=0) out.missing.push('KM rodada do setor');
+    if(isNaN(P.res)||P.res<=0) out.missing.push('resultado realizado');
+    if(isNaN(P.meta)||P.meta<=0) out.missing.push('meta do orçamento');
+    if(isNaN(P.preco)||P.preco<=0) out.missing.push('valor do litro');
+    if(!out.missing.length){
+      out.litrosMeta=P.kmAb/P.meta; out.litrosReal=P.kmAb/P.res; out.econL=out.litrosMeta-out.litrosReal;
+      out.metaOk=P.res>=P.meta; out.econR=out.econL*P.preco; out.bolsa=out.metaOk?out.econR*P.pct:0;
+      const ref=(Math.max(...P.vals)+Math.min(...P.vals))/2; out.ref=ref;
+      out.n=out.metaOk&&ref>0?Math.max(0,Math.round(out.bolsa/ref)):0;
+    }
+    const gc=S.gc||{};
+    const all=(S.tw||[]).map(x=>{
+      const g=gc[x.m]||0; const pg=g<=P.gA?100:(g<P.gB?95:0);
+      const z=v=>isNaN(v)?0:v; const res=z(x.d)*P.w.d+z(x.c)*P.w.c+z(x.s)*P.w.s+pg*P.w.g;
+      const ex=S.exc[x.m]; let st='Elegível';
+      if(ex) st=ex; else if(isNaN(x.km)||x.km<(isNaN(P.kmMin)?0:P.kmMin)) st='Baixa KM';
+      return Object.assign({},x,{g,pg,res,st,el:st==='Elegível',prize:0,rank:null,win:false});
+    }).sort((a,b)=>b.res-a.res);
+    all.forEach((x,i)=>x.pos=i+1);
+    let el=all.filter(x=>x.el);
+    el.forEach((x,i)=>x.rank=i+1);
+    const n=out.n||0; let winners=el.slice(0,n).map(x=>({m:x.m,n:x.n,res:x.res,ref:x}));
+    const sm=normM(S.sec.m);
+    if(n>0 && sm){
+      const found=all.find(x=>x.m===sm);
+      const w={m:sm,n:S.sec.n||(found&&found.n)||'Seccionada',res:null,sec:true,ref:found||null};
+      winners=winners.filter(x=>x.m!==sm);
+      if(winners.length>=n) winners=winners.slice(0,n-1);
+      let p=parseInt(S.sec.p,10); if(!(p>=1&&p<=n)) p=n;
+      winners.splice(Math.min(p-1,winners.length),0,w);
+    }
+    const per=Math.ceil(n/4);
+    winners.forEach((w,i)=>{ w.pos=i+1; w.tier=Math.min(3,Math.floor(i/per)); w.val=P.vals[w.tier]||0; if(w.ref){w.ref.win=true;w.ref.prize=w.val;} });
+    out.all=all; out.winners=winners; out.total=winners.reduce((s,w)=>s+w.val,0); out.per=per; out.el=el.length;
+    return out;
+  }
+
+  /* ---- render ---- */
+  function render(){
+    R=compute(); const P=R.P;
+    // arquivos
+    const dz=(d,s,ok,name,txt)=>{ $(d).classList.toggle('done',ok); $(s).textContent=ok?name+' · '+txt:$(s).dataset.def; };
+    ['s-tw','s-gc'].forEach(id=>{ if(!$(id).dataset.def) $(id).dataset.def=$(id).textContent; });
+    dz('d-tw','s-tw',!!S.tw,S.twName,(S.tw?S.tw.length:0)+' motoristas');
+    dz('d-gc','s-gc',!!S.gc,S.gcName,(S.gc?Object.keys(S.gc).length:0)+' colaboradores');
+    // kpis
+    const miss=R.missing.slice(); if(!S.tw) miss.push('planilha de telemetria'); if(!S.gc) miss.push('planilha de gestão de consequências');
+    $('pend').hidden=!miss.length; $('pend').textContent=miss.length?'Falta preencher: '+miss.join(', ')+'.':'';
+    const set=(id,t)=>$(id).textContent=t;
+    if(!R.missing.length){
+      set('k-lm',fmt(R.litrosMeta,0)); set('k-lr','Real: '+fmt(R.litrosReal,0)+' L');
+      set('k-el',fmt(R.econL,0)); set('k-er',brl(R.econR)); set('k-pr',fmt(P.res,2)+' km/l contra meta de '+fmt(P.meta,2));
+      set('k-b',brl(R.bolsa)); set('k-bp',R.metaOk?fmt(P.pct*100,0)+'% da economia':'Meta não atingida');
+      set('k-n',String(R.n)); set('k-nf',R.n?'Bolsa ÷ '+brl(R.ref)+' · '+R.per+' por faixa':'');
+      $('meta-pill').innerHTML=R.metaOk?'<span class="pill ok">Meta do orçamento atingida</span>':'<span class="pill bad">Meta não atingida · sem premiação</span>';
+    } else { ['k-lm','k-lr','k-el','k-er','k-pr','k-b','k-bp','k-n','k-nf'].forEach(id=>set(id,id.length>4?'':'—')); $('meta-pill').innerHTML='<span class="pill neu">Aguardando dados</span>'; }
+    set('k-t',R.winners.length?brl(R.total):'—');
+    const d=R.total-(R.bolsa||0); set('k-td',R.winners.length?(Math.abs(d)<0.005?'Igual à bolsa':(d>0?brl(d)+' acima da bolsa':brl(-d)+' abaixo da bolsa')):'');
+    // seccionada posições
+    const sp=$('sec-p'); const n=R.n||0; sp.innerHTML='<option value="">Posição: no lugar do último ('+(n||'—')+'º)</option>'+Array.from({length:n},(_,i)=>'<option value="'+(i+1)+'"'+(String(S.sec.p)===String(i+1)?' selected':'')+'>Posição: '+(i+1)+'º</option>').join('');
+    // ganhadores
+    const T=$('tiers');
+    if(!R.winners.length){ T.innerHTML='<p class="empty">'+(miss.length?'Os ganhadores aparecem aqui depois de preencher os dados do mês e carregar as duas planilhas.':(R.metaOk===false?'A meta do orçamento não foi atingida: não há premiação neste mês.':'Nenhum motorista elegível.'))+'</p>'; }
+    else {
+      let h=''; for(let t=0;t<4;t++){ const ws=R.winners.filter(w=>w.tier===t); if(!ws.length) continue;
+        h+='<div class="tier"><h3><span>Faixa '+(t+1)+' · '+ws.length+(ws.length>1?' motoristas':' motorista')+'</span><b class="num">'+brl(P.vals[t])+'</b></h3><ol class="wl">'+
+          ws.map(w=>'<li class="'+(w.sec?'sec':'')+'"><span class="p">'+w.pos+'º</span><span class="n">'+esc(w.n)+'<small>Matrícula '+esc(w.m)+'</small></span><span class="r num">'+(w.res==null?'—':fmt(w.res,2))+'</span></li>').join('')+'</ol></div>'; }
+      T.innerHTML=h;
+    }
+    const exN=Object.keys(S.exc).length; $('exc-sum').textContent=exN?exN+(exN>1?' motoristas excluídos':' motorista excluído')+' manualmente. Para desfazer, volte a coluna “Excluir” para “—”.':'Falta ou suspensão, acidente grave e veto do gestor são marcados na tabela abaixo, na coluna “Excluir”.';
+    renderTable();
+  }
+  const MOT=['Falta/suspensão','Acidente grave','Veto do gestor','Outro motivo'];
+  function renderTable(){
+    const tb=$('tb'); if(!R||!R.all.length){ tb.innerHTML='<tr><td colspan="13" class="empty">Carregue a planilha de telemetria para ver o ranking.</td></tr>'; $('rank-count').textContent=''; return; }
+    const q=$('q').value.trim().toLowerCase(), only=$('only-el').checked;
+    let rows=R.all.filter(x=>(!q||x.n.toLowerCase().includes(q)||x.m.includes(q))&&(!only||x.el));
+    rows=rows.slice().sort((a,b)=>{ const k=sortK==='rank'?'pos':sortK; const A=a[k],B=b[k]; if(typeof A==='string') return A.localeCompare(B,'pt-BR')*sortDir; return ((A==null?-1e9:A)-(B==null?-1e9:B))*sortDir; });
+    tb.innerHTML=rows.map(x=>{
+      const pill=x.st==='Elegível'?(x.win?'<span class="pill ok">Premiado</span>':'<span class="pill neu">Elegível</span>'):(x.st==='Baixa KM'?'<span class="pill warn">Baixa KM</span>':'<span class="pill bad">'+esc(x.st)+'</span>');
+      const sel='<select data-m="'+esc(x.m)+'" aria-label="Excluir '+esc(x.n)+'"><option value="">—</option>'+MOT.map(o=>'<option'+(S.exc[x.m]===o?' selected':'')+'>'+o+'</option>').join('')+'</select>';
+      return '<tr class="'+(x.win?'win':'')+(x.el||x.win?'':' out')+'"><td>'+x.pos+'</td><td class="l">'+esc(x.m)+'</td><td class="l name">'+esc(x.n)+'</td><td>'+fmt(x.km,0)+'</td><td>'+fmt(x.d,2)+'</td><td>'+fmt(x.c,2)+'</td><td>'+fmt(x.s,2)+'</td><td>'+x.g+'</td><td>'+x.pg+'</td><td><b>'+fmt(x.res,2)+'</b></td><td class="l">'+pill+'</td><td class="prize">'+(x.win?brl(x.prize):'')+'</td><td class="l">'+sel+'</td></tr>';
+    }).join('');
+    tb.querySelectorAll('select[data-m]').forEach(s=>s.addEventListener('change',e=>{ const m=e.target.dataset.m; if(e.target.value) S.exc[m]=e.target.value; else delete S.exc[m]; save(); render(); }));
+    $('rank-count').textContent=R.all.length+' motoristas · '+R.el+' elegíveis · '+R.winners.length+' premiados';
+  }
+  $('copy').addEventListener('click',()=>{
+    if(!R||!R.winners.length){toast('Ainda não há ganhadores para copiar');return}
+    const mes=(S.mes||'').toUpperCase();
+    const txt=['MATRÍCULA\tMOTORISTA\tRESULTADO\tVALOR\tMÊS'].concat(R.winners.map(w=>[w.m,w.n.toUpperCase(),w.res==null?'SECCIONADA':fmt(w.res,2),fmt(w.val,2),mes].join('\t'))).join('\n');
+    const done=()=>toast('Lista copiada. Cole no Excel com Ctrl+V');
+    const fallback=()=>{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');done()}catch(e){toast('Não consegui copiar')} ta.remove(); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(fallback); else fallback();
+  });
+
+  /* ---- exportar Excel no formato do modelo (aba LINHAS <MÊS> + RESUMO GANHADORES) ---- */
+  function buildWorkbook(){
+    const P=R.P, mes=(S.mes||'').trim().toUpperCase()||'MÊS';
+    const enc=(r,c)=>XLSX.utils.encode_cell({r,c});
+    const ws={}; let maxR=0;
+    const put=(r,c,cell)=>{ ws[enc(r,c)]=cell; if(r>maxR) maxR=r; };
+    const s=v=>({t:'s',v:String(v)}), n=(v,z)=>{ const o={t:'n',v:isNaN(v)?0:v}; if(z) o.z=z; return o; }, f=(fm,v,z)=>{ const o={t:'n',f:fm,v:isNaN(v)?0:v}; if(z) o.z=z; return o; };
+    put(0,0,s('TransitWay - Viagens do Dia · Direção Positiva 2.0 · '+mes));
+    put(1,4,n(P.w.d)); put(1,7,n(P.w.c)); put(1,9,n(P.w.s)); put(1,12,n(P.w.g)); put(1,16,s('ResultadoPonderado')); put(1,18,s('DISTRIBUIÇÃO'));
+    ['Pos.','Matrícula','Motorista','KM','Meta','Real','Pont.','Eventos','Pont.','Eventos','Pont.','TotalEventos','Pontos GC','Tolerância','Pont. (%)','Pont GC','ResultadoPonderado','Observação','QUARTIS'].forEach((h,c)=>put(2,c,s(h)));
+    const secW=R.winners.find(w=>w.sec);
+    const bumped=secW?R.all.filter(x=>x.el&&!x.win&&x.rank!=null&&x.rank<=R.n).map(x=>x.m):[];
+    R.all.forEach((x,i)=>{
+      const r=3+i, e=r+1;
+      put(r,0,n(i+1)); put(r,1,s(x.m)); put(r,2,s(x.n)); put(r,3,n(x.km,'0.00')); put(r,4,n(x.metaL,'0.00')); put(r,5,n(x.realL,'0.00'));
+      put(r,6,n(x.d,'0.00')); put(r,7,n(x.ec)); put(r,8,n(x.c,'0.00')); put(r,9,n(x.es)); put(r,10,n(x.s,'0.00'));
+      put(r,11,f('H'+e+'+J'+e,(x.ec||0)+(x.es||0))); put(r,12,n(x.g)); put(r,13,n(40));
+      put(r,14,f('IF((1-(M'+e+'/N'+e+'))<0,0,(1-(M'+e+'/N'+e+')))*100',Math.max(0,1-x.g/40)*100,'0.0'));
+      put(r,15,f('IF(M'+e+'<='+P.gA+',100,IF(AND(M'+e+'>'+P.gA+',M'+e+'<'+P.gB+'),95,0))',x.pg));
+      put(r,16,f('(G'+e+'*$E$2)+($H$2*I'+e+')+(K'+e+'*$J$2)+($M$2*P'+e+')',x.res,'0.0000'));
+      let obs=x.st==='Elegível'?'OK':x.st; if(bumped.includes(x.m)) obs='Retirar para incluir um da seccionada: '+secW.n;
+      put(r,17,s(obs)); put(r,18,x.win?n(x.prize):s('-'));
+    });
+    const last=3+R.all.length, sumR=last+1;
+    put(last,3,f('SUM(D4:D'+last+')',R.all.reduce((a,x)=>a+(x.km||0),0),'#,##0.00'));
+    // dados importantes
+    let r=last+3; const rowOf={};
+    const kv=(k,label,cell)=>{ put(r,0,s(label)); if(cell) put(r,1,cell); rowOf[k]=r+1; r++; };
+    put(r,0,s('DADOS IMPORTANTES')); r++;
+    const ok=!R.missing.length;
+    kv('km','KM rodada Real do abastecimento:',ok?n(P.kmAb,'#,##0.00'):null);
+    kv('real','Combustível '+mes.toLowerCase()+' Real (litros):',ok?f('B'+(r)+'/'+P.res,R.litrosReal,'#,##0.00'):null);    kv('res','Resultado '+mes.toLowerCase()+' Abastecimento:',ok?f('B'+rowOf.km+'/B'+rowOf.real,P.res,'0.00'):null);
+    kv('preco','Valor do litro:',ok?n(P.preco,'"R$" #,##0.00'):null);
+    kv('cen','Cenário 1',s('Orçamento'));
+    kv('meta','Meta linha orçamento:',ok?n(P.meta,'0.00'):null);
+    kv('cm','Combustível meta',ok?f('$B$'+rowOf.km+'/B'+rowOf.meta,R.litrosMeta,'#,##0.00'):null);
+    kv('ec','Economia:',ok?f('B'+rowOf.cm+'-$B$'+rowOf.real,R.econL,'#,##0.00'):null);
+    kv('ve','Valor economizado',ok?f('B'+rowOf.preco+'*B'+rowOf.ec,R.econR,'"R$" #,##0.00'):null);
+    kv('vp','Valor para programa',ok?f('IF(B'+rowOf.res+'>=B'+rowOf.meta+',B'+rowOf.ve+'*'+P.pct+',0)',R.bolsa,'"R$" #,##0.00'):null);
+    kv('qt','Qtd Premiados',ok?f('ROUND((B'+rowOf.vp+'/(('+P.vals[0]+'+'+P.vals[3]+')/2)),0)',R.n):null);
+    kv('tp','Total a pagar',n(R.total,'"R$" #,##0.00'));
+    r++;
+    ['KM mínimo por motorista: '+(isNaN(P.kmMin)?'-':P.kmMin)+' km','Acidentes próprios graves e gravíssimos: 3 meses fora','Faltas e suspensão não justificadas: não participa no mês','Gerente com poder de veto (com o comitê)','Linha seccionada: 1 ganhador, no lugar do último colocado'].forEach(t=>{put(r,0,s(t));r++});
+    ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(maxR,r),c:18}});
+    ws['!cols']=[6,11,38,11,10,10,9,9,9,9,9,12,11,11,10,9,18,46,10].map(w=>({wch:w}));
+    ws['!cols'][0]={wch:34};
+    // resumo
+    const res=[['MATRÍCULA','MOTORISTA','RESULTADO','VALOR','MÊS']].concat(R.winners.map(w=>[w.m,w.n.toUpperCase(),w.res==null?'SECCIONADA':Math.round(w.res*10000)/10000,w.val,mes]));
+    const ws2=XLSX.utils.aoa_to_sheet(res); ws2['!cols']=[{wch:12},{wch:40},{wch:12},{wch:10},{wch:12}];
+    for(let i=1;i<res.length;i++){ const c=ws2[XLSX.utils.encode_cell({r:i,c:3})]; if(c) c.z='#,##0.00'; const d=ws2[XLSX.utils.encode_cell({r:i,c:2})]; if(d&&d.t==='n') d.z='0.00'; }
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,('LINHAS '+mes).slice(0,31));
+    XLSX.utils.book_append_sheet(wb,ws2,'RESUMO GANHADORES');
+    return {wb,name:'Resultado Linhas '+(S.mes||'').trim()+'.xlsx'};
+  }
+  $('xlsx').addEventListener('click',async()=>{
+    if(!R||!R.all.length){toast('Carregue a planilha de telemetria antes de exportar');return}
+    let out; try{ out=buildWorkbook(); }catch(e){ toast('Não consegui montar a planilha'); console.error(e); return; }
+    const fname=out.name.replace(/\s+\.xlsx$/,'.xlsx');
+    let dl=null; try{ if(window.claude&&window.claude.use) dl=await window.claude.use('downloads'); }catch(e){}
+    if(dl){
+      try{ const buf=XLSX.write(out.wb,{bookType:'xlsx',type:'array'}); await dl.save({filename:fname,data:new Blob([buf])}); toast('Planilha salva'); }
+      catch(e){ if(e&&e.code==='declined') return; toast(e&&e.code==='rate_limited'?'Já existe um pedido de download aberto':'Não foi possível salvar aqui. Use o painel salvo no computador.'); }
+    } else {
+      try{ XLSX.writeFile(out.wb,fname); }catch(e){ toast('Não foi possível salvar a planilha neste navegador'); }
+    }
+  });
+
+  load(); FIELDS.forEach(k=>{ if(S.vals[k]==null && DEF[k]!=null) S.vals[k]=DEF[k]; }); syncInputs(); render();
+})();
+</script>
+
+</body>
+</html>
