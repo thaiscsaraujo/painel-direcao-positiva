@@ -53,6 +53,15 @@ p{margin:0}
 .kpi b{font-family:var(--display);font-weight:700;font-size:28px;color:var(--ink);line-height:1.1}
 .kpi small{font-size:12.5px;color:var(--muted)}
 .kpi.main i{background:var(--teal)} .kpi.main i svg{stroke:#fff} .kpi.main b{color:var(--deep)}
+/* acumulado do período: aparece ao passar o mouse (ou tocar, no celular) */
+.kpi{position:relative;overflow:hidden}
+.kpi .hint{position:absolute;top:9px;right:12px;font:600 10.5px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--soft);font-style:normal;transition:opacity var(--t)}
+.kpi .acc{position:absolute;inset:0;background:var(--abyss);padding:12px 18px;display:flex;flex-direction:column;justify-content:center;gap:1px;transform:translateY(101%);transition:transform .28s cubic-bezier(.2,.7,.2,1)}
+.kpi .acc span{color:#9FD9D4;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.kpi .acc b,.kpi.main .acc b{color:#fff}
+.kpi .acc small{color:#C9ECE9}
+.kpi.has-acc:hover .acc,.kpi.has-acc:focus-visible .acc,.kpi.show .acc{transform:none}
+.kpi.has-acc:hover .hint,.kpi.show .hint{opacity:0}
 
 /* abas */
 .tabbar{position:sticky;top:0;z-index:20;background:rgba(243,246,246,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin-top:24px}
@@ -825,7 +834,19 @@ window.DP_CONFIG = {
     $('fin-checks').querySelectorAll('[data-fix]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.fix)));
     $('save').disabled=!!SV||crit.length>0; $('save').textContent=isSaved(S.mesRef)?'Atualizar resultado na planilha':'Salvar resultado na planilha';
     $('xlsx').disabled=$('xlsx2').disabled=!R.all.length;
-    renderTable();
+    renderAcc(); renderTable();
+  }
+  // acumulado de todos os meses salvos, mostrado no verso de cada indicador
+  function renderAcc(){
+    const keys=Object.keys(HIST.months).sort(), ms=keys.map(k=>HIST.months[k]), on=keys.length>1;
+    const s=f=>ms.reduce((a,m)=>a+(isNaN(+m[f])?0:+m[f]),0), per=on?mesLabel(keys[0],true)+' a '+mesLabel(keys[keys.length-1],true):'';
+    const D=on?{econ:[fmt(s('econL'),0)+' L',brl(s('econR'))+' economizados'],bolsa:[brl(s('bolsa')),'média de '+brl(s('bolsa')/keys.length)+' por mês'],
+      n:[int(s('n')),'prêmios · '+aggregatePeople(HIST.months).length+' motoristas diferentes'],total:[brl(s('total')),keys.length+' meses pagos']}:{};
+    document.querySelectorAll('.kpis .kpi').forEach((c,i)=>{ const k=['econ','bolsa','n','total'][i];
+      if(!c.querySelector('.acc')){ c.insertAdjacentHTML('beforeend','<em class="hint">Σ acumulado</em><div class="acc"></div>');
+        c.addEventListener('click',()=>{ if(c.classList.contains('has-acc')&&matchMedia('(hover: none)').matches) c.classList.toggle('show'); }); }
+      const h=c.querySelector('.hint'), a=c.querySelector('.acc'); h.hidden=a.hidden=!on; c.classList.toggle('has-acc',on); if(on) c.tabIndex=0; else c.removeAttribute('tabindex');
+      if(on){ a.innerHTML='<span>Acumulado · '+per+'</span><b class="num">'+D[k][0]+'</b><small>'+D[k][1]+'</small>'; } });
   }
 
   /* ---------------- ranking e gaveta do motorista ---------------- */
