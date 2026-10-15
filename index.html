@@ -202,6 +202,33 @@ details.adv[open] summary .ar{transform:rotate(180deg)}
 .saved b{display:block;font-family:var(--display);font-size:18px;color:#fff}
 .saved span{font-size:14px;color:#BFE3E0}
 .saved .btn{margin-left:auto}
+.saved{flex-wrap:wrap}
+.saved.redo{background:#5A3E10} .saved.redo svg{stroke:#F5C26B} .saved.redo span{color:#F3E2C2}
+.redo-form{flex-basis:100%;border-top:1px solid rgba(255,255,255,.15);padding-top:12px;display:grid;gap:10px}
+.redo-form p{font-size:14px;color:#BFE3E0}
+.redo-form .rf{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.redo-form label{font-size:12.5px;font-weight:600;color:#BFE3E0;display:grid;gap:4px}
+.redo-form input{font:500 14.5px var(--body);border:0;border-radius:8px;padding:8px 10px;color:var(--ink)}
+.redo-form .rf-b{display:flex;gap:8px;align-items:center}
+.redo-form .rf-b .btn{margin-left:0}
+.rf-msg{font-size:13px;color:#FFC9C2}
+.log{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px 16px;font-size:14px}
+.log summary{cursor:pointer;font-weight:600;color:var(--deep)}
+.log ol{margin:10px 0 4px;padding-left:20px;display:grid;gap:8px}
+.log li small{display:block;color:var(--muted)}
+.log li ul{margin:4px 0 0;padding-left:18px;color:var(--text)}
+/* mês fechado: campos travados */
+.lock-note{display:flex;align-items:center;gap:8px;background:#EEF1F1;color:var(--muted);border-radius:8px;padding:8px 12px;font-size:13.5px;font-weight:600;margin-top:12px}
+.lock-note::before{content:"";width:14px;height:14px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 10V7a6 6 0 0 1 12 0v3h1v12H5V10zm2 0h8V7a4 4 0 0 0-8 0z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 10V7a6 6 0 0 1 12 0v3h1v12H5V10zm2 0h8V7a4 4 0 0 0-8 0z'/%3E%3C/svg%3E") center/contain no-repeat}
+.is-locked input:disabled,.is-locked select:disabled{background:#F3F6F6;color:var(--muted);cursor:not-allowed}
+.is-locked .box:has(input:disabled){background:#F3F6F6}
+.drop.locked{pointer-events:none;opacity:.6;border-style:solid}
+/* linha seccionada no ranking */
+.secbar{display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:#FFFCF6}
+.secbar .sb-t{flex:1 1 260px} .secbar b{display:block;font-family:var(--display);font-size:16px;color:var(--ink)} .secbar span{font-size:13px;color:var(--muted)}
+.secbar .sb-f{display:flex;gap:8px;flex-wrap:wrap}
+.secbar input,.secbar select{font:500 14px var(--body);border:1.5px solid var(--line);border-radius:8px;padding:6px 9px;background:#fff;color:var(--ink)}
+.secbar #sec-m{width:110px} .secbar #sec-n{width:220px}
 
 /* passo 4 */
 .fin{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -300,7 +327,7 @@ tr.det td{background:#F7FBFB;text-align:left}
 .inst svg{width:30px;height:30px;flex:none}
 @media (max-width:1100px){.fields{grid-template-columns:repeat(3,minmax(0,1fr))}.adv-body{grid-template-columns:1fr}.resgrid,.fin{grid-template-columns:1fr}.charts{grid-template-columns:1fr}}
 @media (max-width:860px){.kpis{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr}.drops{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.sum{grid-template-columns:1fr 1fr}}
-@media (max-width:560px){.fields{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr}}
+@media (max-width:560px){.fields{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr}.redo-form .rf{grid-template-columns:1fr}.secbar #sec-n{width:100%}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -357,7 +384,14 @@ tr.det td{background:#F7FBFB;text-align:left}
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
     <div><b id="saved-t">Resultado salvo</b><span id="saved-s"></span></div>
     <button type="button" class="btn sm" id="redo">Refazer apuração</button>
+    <button type="button" class="btn sm" id="redo-cancel" hidden>Cancelar e manter o salvo</button>
+    <form class="redo-form" id="redo-form" hidden>
+      <p>A alteração de um mês fechado fica registrada. Informe quem está refazendo e o motivo.</p>
+      <div class="rf"><label>Seu nome<input id="redo-por" type="text" autocomplete="name" required></label><label>Motivo da alteração<input id="redo-mot" type="text" required placeholder="Ex.: inclusão de acidente informado pelo gestor"></label></div>
+      <div class="rf-b"><button type="submit" class="btn sm pri">Liberar edição</button><button type="button" class="btn sm" id="redo-no">Cancelar</button><span class="rf-msg" id="redo-msg"></span></div>
+    </form>
   </div>
+  <details class="log" id="log" hidden><summary id="log-s"></summary><ol id="log-l"></ol></details>
 
   <!-- etapa 1 -->
   <div class="card step" data-step="1">
@@ -431,9 +465,7 @@ tr.det td{background:#F7FBFB;text-align:left}
     <div class="resgrid">
       <div><div class="tiers" id="tiers"></div></div>
       <aside class="side" id="res-side">
-        <div class="box2"><h4>Linha seccionada (sem rede CAN)</h4><p>1 ganhador escolhido pela gestão, que entra no lugar do último colocado.</p>
-          <div class="sf"><input id="sec-m" type="text" placeholder="Matrícula" inputmode="numeric" aria-label="Matrícula da seccionada"><input id="sec-n" type="text" placeholder="Nome do motorista" aria-label="Nome do motorista da seccionada"><select id="sec-p" aria-label="Posição no ranking"></select><button type="button" class="btn sm" id="sec-clear">Remover seccionada</button></div></div>
-        <div class="box2"><h4>Exclusões e análises</h4><p id="exc-sum"></p><div class="sf"><button type="button" class="btn sm" id="go-rank">Abrir ranking completo</button></div></div>
+        <div class="box2"><h4>Linha seccionada e exclusões</h4><p id="sec-sum2"></p><p id="exc-sum" style="margin-top:6px"></p><div class="sf"><button type="button" class="btn sm" id="go-rank">Ajustar no ranking</button></div></div>
       </aside>
     </div>
     <div class="step-foot" id="foot-3"><button type="button" class="btn" data-next="2">← Voltar</button><span class="why" id="why-3"></span><button type="button" class="btn pri" data-next="4">Continuar para finalizar →</button></div>
@@ -467,6 +499,10 @@ tr.det td{background:#F7FBFB;text-align:left}
       <span class="cnt" id="rank-cnt"></span>
     </div>
     <p class="rank-note" id="rank-note" hidden></p>
+    <div class="secbar" id="secbar" hidden>
+      <div class="sb-t"><b>Linha seccionada (sem rede CAN)</b><span id="sec-sum">1 motorista a mais, escolhido pela gestão, na faixa definida. Não tira ninguém do ranking.</span></div>
+      <div class="sb-f"><input id="sec-m" type="text" placeholder="Matrícula" inputmode="numeric" aria-label="Matrícula da seccionada"><input id="sec-n" type="text" placeholder="Nome do motorista" aria-label="Nome do motorista da seccionada"><select id="sec-t" aria-label="Faixa do prêmio"></select><button type="button" class="btn sm" id="sec-clear">Remover</button></div>
+    </div>
     <div class="tw scroll"><table class="rk num">
       <colgroup><col style="width:52px"><col><col style="width:78px"><col style="width:96px"><col style="width:118px"><col style="width:72px"><col style="width:66px"><col style="width:76px"><col style="width:84px"><col style="width:66px"></colgroup>
       <thead><tr><th>Pos.</th><th class="l">Motorista</th><th>Nota</th><th>Prêmio</th><th class="l">Situação</th><th>KM</th><th>Diesel</th><th>Consumo</th><th>Segurança</th><th>GC</th></tr></thead>
@@ -558,6 +594,7 @@ window.DP_CONFIG = {
   function ingest(buf,name){ const got=detect(parseBook(buf)); if(!got) throw new Error('Não reconheci “'+name+'”. A telemetria precisa das colunas Matrícula, KM, Meta e Real; a gestão de consequências, das colunas CHAPA e PONTUAÇÃO.');
     if(got.type==='tw'){S.tw=got.data;S.twName=name} else {S.gc=got.data;S.gcName=name} return got.type; }
   async function handle(file,hint){
+    if(isLocked()){ toast('Mês fechado. Use “Refazer apuração” para alterar.'); return; }
     LOAD[hint]=true; delete ERR[hint]; render(); await new Promise(r=>setTimeout(r,80));
     try{ const t=ingest(await file.arrayBuffer(),file.name); LOAD[hint]=false; delete ERR[t];
       toast(hint&&hint!==t?'Planilha colocada no lugar trocado. Ajustei sozinho.':(t==='tw'?'Telemetria':'Gestão de consequências')+' carregada'); save(); render(); }
@@ -585,11 +622,16 @@ window.DP_CONFIG = {
       return Object.assign({},x,{g,pg,res,st,el:st==='Elegível'||st==='Em análise',noGC:!(x.m in gc),prize:0,rank:null,win:false}); }).sort((a,b)=>b.res-a.res);
     all.forEach((x,i)=>x.pos=i+1); const el=all.filter(x=>x.el); el.forEach((x,i)=>x.rank=i+1);
     const n=out.n||0; let winners=el.slice(0,n).map(x=>({m:x.m,n:x.n,res:x.res,ref:x}));
-    const sm=normM(S.sec.m);
-    if(n>0&&sm){ const found=all.find(x=>x.m===sm); const w={m:sm,n:S.sec.n||(found&&found.n)||'Seccionada',res:null,sec:true,ref:found||null};
-      winners=winners.filter(x=>x.m!==sm); if(winners.length>=n) winners=winners.slice(0,n-1); let p=parseInt(S.sec.p,10); if(!(p>=1&&p<=n)) p=n; winners.splice(Math.min(p-1,winners.length),0,w); }
     const per=Math.ceil(n/4);
-    winners.forEach((w,i)=>{ w.pos=i+1; w.tier=Math.min(3,Math.floor(i/per)); w.val=P.vals[w.tier]||0; if(w.ref){w.ref.win=true;w.ref.prize=w.val;} });
+    winners.forEach((w,i)=>{ w.tier=Math.min(3,Math.floor(i/per)); w.val=P.vals[w.tier]||0; });
+    // linha seccionada: 1 motorista a mais, na faixa escolhida pela gestão (não tira ninguém)
+    const sm=normM(S.sec.m); out.secRow=null; out.secDup=false;
+    if(n>0&&sm){ const found=all.find(x=>x.m===sm);
+      if(winners.some(x=>x.m===sm)) out.secDup=true;
+      else { const t=S.sec.t===''||S.sec.t==null?3:Math.min(3,Math.max(0,parseInt(S.sec.t,10)||0)), nm=S.sec.n||(found&&found.n)||'Seccionada';
+        const ref=found||(out.secRow={pos:null,m:sm,n:nm,km:NaN,d:NaN,ec:NaN,c:NaN,es:NaN,s:NaN,g:null,pg:null,res:NaN,st:'Linha seccionada',el:false,noGC:false});
+        const w={m:sm,n:nm,res:null,sec:true,ref,tier:t,val:P.vals[t]||0}; let at=winners.findIndex(x=>x.tier>t); if(at<0) at=winners.length; winners.splice(at,0,w); } }
+    winners.forEach((w,i)=>{ w.pos=i+1; if(w.ref){w.ref.win=true;w.ref.prize=w.val;w.ref.sec=!!w.sec;} });
     out.all=all; out.winners=winners; out.total=winners.reduce((s,w)=>s+w.val,0); out.per=per; out.el=el.length;
     return out;
   }
@@ -612,7 +654,7 @@ window.DP_CONFIG = {
     out[s.key]={key:s.key,kmAb:s.kmAb,res,meta:s.meta,preco:s.preco,litrosMeta,litrosReal:s.litrosReal,econL,econR,pct:s.pct,bolsa,n:winners.length,total:winners.reduce((a,w)=>a+w.val,0),salvoEm:s.salvoEm,winners,
       regras:DEF_REGRAS,rk:r.length?{f:RKF,r}:null}; }); return out; }
   function rkRows(m){ if(!m||!m.rk||!m.rk.r) return []; const F=m.rk.f||RKF;
-    return m.rk.r.map(a=>{ const o={}; F.forEach((k,i)=>o[k]=a[i]); o.m=String(o.m); o.win=(+o.prize||0)>0; o.el=o.st==='Elegível'||o.st==='Em análise'; o.noGC=false; o.saved=true; return o; }); }
+    return m.rk.r.map(a=>{ const o={}; F.forEach((k,i)=>o[k]=a[i]); o.m=String(o.m); o.win=(+o.prize||0)>0; o.sec=o.st==='Linha seccionada'; o.el=o.st==='Elegível'||o.st==='Em análise'; o.noGC=false; o.saved=true; return o; }); }
   let HIST={months:{},source:'seed',sheetUrl:''};
   try{ const c=JSON.parse(localStorage.getItem(HKEY)||'null'); if(c&&c.months&&Object.keys(c.months).length) HIST=Object.assign(HIST,c); }catch(e){}
   if(!Object.keys(HIST.months).length||HIST.source==='seed'){ HIST.months=seedMonths(); HIST.source='seed'; }
@@ -658,6 +700,8 @@ window.DP_CONFIG = {
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''}), m={key,winners:[]}, by={}; LBL.forEach(([k,l])=>by[lowk(l)]=k); let hdr=-1;
       rows.forEach((r,i)=>{ const a=lowk(r[0]); if(by[a]){ const k=by[a], val=r.slice(1).find(x=>x!==''&&x!=null); m[k]=k==='salvoEm'||k==='ref'?String(val==null?'':val):toNum(val); } if(a==='pos.') hdr=i; });
       if(hdr>=0) for(let i=hdr+1;i<rows.length;i++){ const r=rows[i]; if(r[0]===''||r[0]==null) break; const sec=String(r[3]).toUpperCase()==='SECCIONADA'||lowk(r[5]).includes('seccionada'); m.winners.push({pos:+r[0],m:normM(r[1]),n:String(r[2]),res:sec?null:toNum(r[3]),val:toNum(r[4]),sec}); }
+      const lh=rows.findIndex(r=>lowk(r[0])==='data da alteracao');
+      if(lh>=0){ m.log=[]; for(let i=lh+1;i<rows.length;i++){ const r=rows[i]; if(r[0]===''||r[0]==null) break; m.log.push({em:String(r[0]),por:r[2]==='—'?'':String(r[2]||''),motivo:String(r[3]||''),mud:String(r[6]||'').split(' · ').filter(Boolean)}); } }
       const rh=rows.findIndex(r=>lowk(r[0])==='pos. ranking');
       if(rh>=0){ const rr=[]; for(let i=rh+1;i<rows.length;i++){ const r=rows[i]; if(r[0]===''||r[0]==null) break; rr.push([+r[0],normM(r[1]),String(r[2]),toNum(r[3]),null,null,toNum(r[4]),null,toNum(r[5]),null,toNum(r[6]),toNum(r[7]),toNum(r[8]),toNum(r[9]),String(r[10]||'Elegível'),toNum(r[11])||0]); } m.rk={f:RKF,r:rr}; }
       if(isNaN(m.n)) m.n=m.winners.length; if(isNaN(m.total)) m.total=m.winners.reduce((a,w)=>a+(w.val||0),0); months[key]=m; });
@@ -682,18 +726,33 @@ window.DP_CONFIG = {
     salvoEm:new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
     winners:R.winners.map(w=>({pos:w.pos,m:w.m,n:w.n,res:w.res==null?null:Math.round(w.res*10000)/10000,val:w.val,sec:!!w.sec})),
     regras:{kmMin:P.kmMin,pct:P.pct,vals:P.vals,w:[P.w.d,P.w.c,P.w.s,P.w.g],gA:P.gA,gB:P.gB},
-    rk:{f:RKF,r:R.all.map(x=>{ const r2=v=>isNaN(v)?null:Math.round(v*100)/100; return [x.pos,x.m,x.n,r2(x.km),r2(x.metaL),r2(x.realL),r2(x.d),isNaN(x.ec)?null:x.ec,r2(x.c),isNaN(x.es)?null:x.es,r2(x.s),x.g,x.pg,Math.round(x.res*10000)/10000,x.st,x.win?x.prize:0]; })}}; }
+    ajustes:{exc:Object.assign({},S.exc),sec:S.sec.m?Object.assign({},S.sec):null},
+    rk:{f:RKF,r:R.all.concat(R.secRow?[R.secRow]:[]).map(x=>{ const r2=v=>v==null||isNaN(v)?null:Math.round(v*100)/100; return [x.pos,x.m,x.n,r2(x.km),r2(x.metaL),r2(x.realL),r2(x.d),r2(x.ec),r2(x.c),r2(x.es),r2(x.s),x.g,x.pg,x.res==null||isNaN(x.res)?null:Math.round(x.res*10000)/10000,x.sec?'Linha seccionada':x.st,x.win?x.prize:0]; })}}; }
+  // o que mudou entre a versão salva (a) e a nova (b), em frases curtas para o registro
+  function diffMonth(a,b){ const out=[], f=(v,d)=>v==null||isNaN(+v)?'—':fmt(+v,d), nm=m=>{ const x=R.all.find(y=>y.m===m); return x?titleCase(x.n)+' ('+m+')':m; };
+    [['kmAb','KM rodada',2],['res','Resultado (km/l)',4],['meta','Meta (km/l)',2],['preco','Valor do litro',2]].forEach(([k,l,d])=>{ if(Math.abs((+a[k]||0)-(+b[k]||0))>1e-6) out.push(l+': '+f(a[k],d)+' → '+f(b[k],d)); });
+    const wa={}, wb={}; (a.winners||[]).forEach(w=>wa[w.m]=w); (b.winners||[]).forEach(w=>wb[w.m]=w);
+    Object.keys(wb).forEach(m=>{ const w=wb[m]; if(!wa[m]) out.push('Entrou: '+titleCase(w.n)+' ('+m+')'+(w.sec?' · linha seccionada':'')+' · '+brl(w.val)); else if(wa[m].val!==w.val) out.push('Prêmio de '+titleCase(w.n)+': '+brl(wa[m].val)+' → '+brl(w.val)); });
+    Object.keys(wa).forEach(m=>{ if(!wb[m]) out.push('Saiu: '+titleCase(wa[m].n)+' ('+m+') · '+brl(wa[m].val)); });
+    const ea=(a.ajustes&&a.ajustes.exc)||{}, eb=(b.ajustes&&b.ajustes.exc)||{};
+    Object.keys(eb).forEach(m=>{ if(ea[m]!==eb[m]) out.push(nm(m)+': marcado como “'+eb[m]+'”'); }); Object.keys(ea).forEach(m=>{ if(!eb[m]) out.push(nm(m)+': retirada a marcação “'+ea[m]+'”'); });
+    if(a.n!==b.n||Math.abs((a.total||0)-(b.total||0))>.005) out.push('Resultado: '+(a.n||0)+' premiados, '+brl(a.total||0)+' → '+b.n+' premiados, '+brl(b.total||0));
+    return out.length?out:['Sem mudança no resultado']; }
   const saveMsg=(t,c)=>{ const e=$('save-msg'); e.hidden=!t; e.className='res-msg'+(c?' '+c:''); e.textContent=t||''; };
   async function doSave(){
     $('save-ask').hidden=true; const btn=$('save'); btn.disabled=true; saveMsg('Salvando na planilha… aguarde a confirmação.','run');
     try{
       if(IN_CLAUDE) throw new Error('Aqui no Claude o painel só lê a planilha. Para salvar, use o painel publicado (GitHub) ou o arquivo HTML.');
       const have=toMap((await scriptCall({action:'list'})).months), mo=monthFromCurrent(), send=[], extra=[];
+      const prev=have[mo.key]||HIST.months[mo.key], rd=redoOn()?S.redo:null;
+      if(prev&&!rd) throw new Error('Este mês já está fechado. Use “Refazer apuração” para liberar a edição.');
+      mo.log=prev?(prev.log||[]).concat([{em:mo.salvoEm,por:rd.por,motivo:rd.motivo,liberadoEm:rd.em,mud:diffMonth(prev,mo)}])
+                 :[{em:mo.salvoEm,por:'',motivo:'Apuração inicial',mud:[mo.n+' premiados · '+brl(mo.total)]}];
       Object.values(seedMonths()).forEach(s=>{ if(s.key===mo.key) return; if(!have[s.key]){ send.push(s); extra.push(mesLabel(s.key)); } else if(!(have[s.key].rk&&have[s.key].rk.r&&have[s.key].rk.r.length)&&s.rk){ send.push(Object.assign({},have[s.key],{rk:s.rk,regras:have[s.key].regras||s.regras})); extra.push('o ranking completo de '+mesLabel(s.key)); } }); send.push(mo);
       const j=await scriptCall({action:'save',months:send},true);
       if(!toMap(j.months)[mo.key]) throw new Error('A planilha não confirmou a gravação. Clique em Atualizar e confira antes de salvar de novo.');
-      applyRemote(j);
-      saveMsg('✓ '+mesLabel(mo.key)+' salvo na planilha: '+mo.n+' premiados, '+brl(mo.total)+'.'+(extra.length?' Também gravei '+extra.join(', ')+'.':''),'ok');
+      S.redo=null; save(); applyRemote(j);
+      saveMsg('✓ '+mesLabel(mo.key)+' salvo na planilha: '+mo.n+' premiados, '+brl(mo.total)+'.'+(rd?' Alteração registrada no histórico do mês.':'')+(extra.length?' Também gravei '+extra.join(', ')+'.':'')+' O mês está fechado.','ok');
     }catch(e){ saveMsg(e.message||String(e),'err'); if(e.pw) sync('Informe a senha para ler e salvar na planilha','err',true); }
     finally{ btn.disabled=false; render(); }
   }
@@ -701,22 +760,39 @@ window.DP_CONFIG = {
   $('save-yes').addEventListener('click',doSave); $('save-no').addEventListener('click',()=>$('save-ask').hidden=true);
 
   /* ---------------- campos e mês ---------------- */
-  function syncInputs(){ FIELDS.forEach(k=>{ const v=S.vals[k]; $(k).value=(v==null||v==='')?'':v; }); $('mesRef').value=S.mesRef||''; $('sec-m').value=S.sec.m||''; $('sec-n').value=S.sec.n||''; }
+  function syncInputs(){ FIELDS.forEach(k=>{ const v=S.vals[k]; $(k).value=(v==null||v==='')?'':v; }); $('mesRef').value=S.mesRef||''; $('sec-m').value=S.sec.m||''; $('sec-n').value=S.sec.n?titleCase(S.sec.n):''; }
   FIELDS.forEach(k=>$(k).addEventListener('input',e=>{ S.vals[k]=e.target.value; save(); render(); }));
+  // mês fechado mostra os números e as regras com que foi apurado
   function fillMonth(k,clear){ const m=HIST.months[k];
-    if(m){ S.vals.kmAb=m.kmAb; S.vals.resultado=isNaN(+m.res)?'':+(+m.res).toFixed(10); S.vals.meta=m.meta; S.vals.preco=m.preco; }
+    if(m){ S.vals.kmAb=m.kmAb; S.vals.resultado=isNaN(+m.res)?'':+(+m.res).toFixed(10); S.vals.meta=m.meta; S.vals.preco=m.preco;
+      const g=m.regras; if(g){ S.vals.kmMin=g.kmMin; S.vals.pct=+(g.pct*100).toFixed(4); ['v1','v2','v3','v4'].forEach((x,i)=>S.vals[x]=g.vals[i]); ['wD','wC','wS','wG'].forEach((x,i)=>S.vals[x]=+(g.w[i]*100).toFixed(4)); S.vals.gA=g.gA; S.vals.gB=g.gB; } }
     else if(clear) ['kmAb','resultado','meta','preco'].forEach(f=>S.vals[f]=''); }
+  const SEC0=()=>({m:'',n:'',t:''});
+  function secFromSaved(m){ if(m.ajustes&&m.ajustes.sec) return Object.assign(SEC0(),m.ajustes.sec);
+    const w=(m.winners||[]).find(x=>x.sec); if(!w) return SEC0(); const i=((m.regras&&m.regras.vals)||[300,250,200,150]).indexOf(w.val); return {m:w.m,n:w.n,t:String(i<0?3:i)}; }
   $('mesRef').addEventListener('input',e=>{ const v=e.target.value; if(v===S.mesRef) return; const had=!!(S.tw||S.gc);
-    S.mesRef=v; S.mes=mesName(v); S.tw=null; S.gc=null; S.twName=''; S.gcName=''; S.exc={}; S.sec={m:'',n:'',p:''}; LOAD={}; ERR={}; saveMsg('');
+    S.mesRef=v; S.mes=mesName(v); S.tw=null; S.gc=null; S.twName=''; S.gcName=''; S.exc={}; S.sec=SEC0(); S.redo=null; LOAD={}; ERR={}; saveMsg(''); REDO_ASK=false;
     fillMonth(v,true); S.step=HIST.months[v]?3:1; syncInputs(); save(); render(); if(had) toast('Planilhas do mês anterior retiradas'); });
+  /* refazer apuração de mês fechado: pede nome e motivo, que vão para o registro de alterações */
+  let REDO_ASK=false;
+  const isClosed=k=>!!HIST.months[k], redoOn=()=>!!(S.redo&&S.redo.key===S.mesRef), isLocked=()=>isClosed(S.mesRef)&&!redoOn();
+  $('redo').addEventListener('click',()=>{ REDO_ASK=true; $('redo-msg').textContent=''; render(); setTimeout(()=>$('redo-por').focus(),30); });
+  $('redo-no').addEventListener('click',()=>{ REDO_ASK=false; render(); });
+  $('redo-form').addEventListener('submit',e=>{ e.preventDefault(); const por=$('redo-por').value.trim(), mot=$('redo-mot').value.trim();
+    if(!por||!mot){ $('redo-msg').textContent='Preencha o nome e o motivo.'; return; }
+    const m=HIST.months[S.mesRef]; S.redo={key:S.mesRef,por,motivo:mot,em:new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})};
+    S.exc=Object.assign({},(m.ajustes&&m.ajustes.exc)||{}); S.sec=secFromSaved(m); fillMonth(S.mesRef); REDO_ASK=false; $('redo-mot').value='';
+    S.step=(S.tw&&S.gc)?1:2; syncInputs(); save(); render(); toast((S.tw&&S.gc)?'Edição liberada':'Edição liberada. Carregue as planilhas do mês para refazer.'); });
+  $('redo-cancel').addEventListener('click',()=>{ S.redo=null; S.tw=null; S.gc=null; S.twName=''; S.gcName=''; S.exc={}; S.sec=SEC0(); LOAD={}; ERR={};
+    fillMonth(S.mesRef); S.step=3; syncInputs(); save(); render(); toast('Edição cancelada. Mantido o resultado salvo.'); });
   let resetAsk=false;
   $('reset').addEventListener('click',()=>{ $('reset-ask').hidden=false; $('reset').hidden=true; });
   $('reset-no').addEventListener('click',()=>{ $('reset-ask').hidden=true; $('reset').hidden=false; });
   $('reset-yes').addEventListener('click',()=>{ RULES.forEach(k=>S.vals[k]=DEF[k]); syncInputs(); save(); render(); $('reset-ask').hidden=true; $('reset').hidden=false; toast('Regras restauradas'); });
   ['sec-m','sec-n'].forEach(id=>$(id).addEventListener('input',()=>{ S.sec.m=$('sec-m').value.trim(); S.sec.n=$('sec-n').value.trim();
     if(S.sec.m&&S.tw){ const f=S.tw.find(x=>x.m===normM(S.sec.m)); if(f&&!S.sec.n){ S.sec.n=f.n; $('sec-n').value=titleCase(f.n); } } save(); render(); }));
-  $('sec-p').addEventListener('change',e=>{S.sec.p=e.target.value;save();render()});
-  $('sec-clear').addEventListener('click',()=>{S.sec={m:'',n:'',p:''};syncInputs();save();render()});
+  $('sec-t').addEventListener('change',e=>{S.sec.t=e.target.value;save();render()});
+  $('sec-clear').addEventListener('click',()=>{S.sec=SEC0();syncInputs();save();render()});
 
   /* ---------------- validação e estado das etapas ---------------- */
   function issues(){
@@ -745,7 +821,6 @@ window.DP_CONFIG = {
   function goStep(i){ S.step=i; save(); render(); const el=document.querySelector('.step[data-step="'+i+'"]'); if(el){ const y=el.getBoundingClientRect().top+scrollY-90; if(scrollY>y) scrollTo({top:y,behavior:REDUCE?'auto':'smooth'}); } }
   document.querySelectorAll('#flow li').forEach(li=>li.querySelector('button').addEventListener('click',()=>goStep(+li.dataset.i)));
   document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.next)));
-  $('redo').addEventListener('click',()=>{ S.step=2; save(); toast('Carregue as planilhas do mês para refazer a apuração'); render(); });
   $('go-rank').addEventListener('click',()=>showTab('rank'));
 
   /* ---------------- indicadores animados ---------------- */
@@ -794,9 +869,18 @@ window.DP_CONFIG = {
     document.querySelectorAll('.step').forEach(c=>c.hidden=+c.dataset.step!==S.step);
     $('why-1').textContent=!S.mesRef?'Escolha o mês de referência no topo da página.':(st[0].s!=='done'?'Preencha os campos destacados para concluir esta etapa.':'');
     $('why-2').textContent=st[1].s!=='done'?'Carregue as duas planilhas para conferir o resultado.':'';
-    // modo resultado salvo
-    $('saved').hidden=!SV; $('res-side').hidden=!!SV;
-    if(SV){ $('saved-t').textContent='Resultado salvo de '+mesLabel(S.mesRef).replace('/','/20'); $('saved-s').textContent=(SV.salvoEm?'Salvo em '+SV.salvoEm+'. ':'')+'Para refazer, carregue as planilhas do mês.'; }
+    // mês fechado: bloqueio, refazer e registro de alterações
+    const MC=HIST.months[S.mesRef]||null, LK=isLocked(), RD=redoOn(), mesL=mesLabel(S.mesRef).replace('/','/20');
+    $('saved').hidden=!MC; $('saved').classList.toggle('redo',RD); $('res-side').hidden=!!SV;
+    if(MC){ if(RD){ $('saved-t').textContent='Refazendo a apuração de '+mesL; $('saved-s').textContent='Liberado por '+S.redo.por+' em '+S.redo.em+' · Motivo: '+S.redo.motivo+'. Ao salvar, a alteração fica registrada.'; }
+      else { $('saved-t').textContent='Mês fechado · '+mesL; $('saved-s').textContent=(MC.salvoEm?'Salvo em '+MC.salvoEm+'. ':'')+'Os dados estão bloqueados. Para alterar, use “Refazer apuração”.'; }
+      $('redo').hidden=RD||REDO_ASK||IN_CLAUDE; $('redo-form').hidden=RD||!REDO_ASK; $('redo-cancel').hidden=!RD; }
+    const lg=(MC&&MC.log)||[]; $('log').hidden=!lg.length;
+    if(lg.length){ const ed=lg.filter(x=>x.por).length; $('log-s').textContent='Registro de alterações · '+(ed?ed+(ed>1?' alterações':' alteração'):'nenhuma alteração')+' depois da apuração';
+      $('log-l').innerHTML=lg.slice().reverse().map(x=>'<li><b>'+esc(x.em||'')+'</b>'+(x.por?' · '+esc(x.por):'')+'<small>'+esc(x.motivo||'')+(x.liberadoEm?' · edição liberada em '+esc(x.liberadoEm):'')+'</small><ul>'+(x.mud||[]).map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></li>').join(''); }
+    document.querySelectorAll('.step').forEach(c=>{ c.classList.toggle('is-locked',LK); if(!c.querySelector('.lock-note')) c.querySelector('.ch').insertAdjacentHTML('afterend','<p class="lock-note" hidden>Mês fechado: dados bloqueados para edição. Para alterar, use “Refazer apuração” no topo.</p>'); c.querySelector('.lock-note').hidden=!LK; });
+    document.querySelectorAll('.step[data-step="1"] input').forEach(e=>e.disabled=LK);
+    ['reset','f-tw','f-gc','sec-m','sec-n','sec-t','sec-clear'].forEach(id=>$(id).disabled=LK); ['d-tw','d-gc'].forEach(id=>$(id).classList.toggle('locked',LK));
     // indicadores do topo
     const src=SV||(!R.missing.length?{econL:R.econL,econR:R.econR,bolsa:R.bolsa,pct:P.pct,n:(S.tw?R.winners.length:R.n),total:(S.tw?R.total:NaN),res:P.res,meta:P.meta}:null);
     if(src){ anim('k-econ',src.econL,lit); $('k-econ-s').textContent=isNaN(src.econR)?'':brl(src.econR)+' economizados';
@@ -818,7 +902,13 @@ window.DP_CONFIG = {
       $('sum').innerHTML=R.missing.length?'':'<div><span>Litros na meta · reais</span><b>'+fmt(R.litrosMeta,0)+' · '+fmt(R.litrosReal,0)+'</b></div><div><span>Valor economizado</span><b>'+brl(R.econR)+'</b></div><div><span>Referência por premiado</span><b>'+brl(R.ref)+' · '+R.per+' por faixa</b></div>';
       T.innerHTML=R.winners.length?tiersHTML(R.winners):'<p class="empty">'+(st[0].s!=='done'||st[1].s!=='done'?'Conclua as etapas 1 e 2 para ver os ganhadores.':(R.metaOk===false?'A meta do orçamento não foi atingida: não há premiação neste mês.':'Nenhum motorista elegível.'))+'</p>'; }
     $('why-3').textContent=(!SV&&(st[0].s!=='done'||st[1].s!=='done'))?'Conclua as etapas anteriores.':'';
-    const sp=$('sec-p'), n=R.n||0; sp.innerHTML='<option value="">Posição: no lugar do último ('+(n||'—')+'º)</option>'+Array.from({length:n},(_,i)=>'<option value="'+(i+1)+'"'+(String(S.sec.p)===String(i+1)?' selected':'')+'>Posição: '+(i+1)+'º</option>').join('');
+    // linha seccionada (1 a mais, na faixa escolhida)
+    const secT=S.sec.t===''||S.sec.t==null?'3':String(S.sec.t);
+    $('sec-t').innerHTML=P.vals.map((v,i)=>'<option value="'+i+'"'+(secT===String(i)?' selected':'')+'>'+(i+1)+'ª faixa · '+(isNaN(v)?'—':brl(v))+'</option>').join('');
+    const sw=R.winners.find(w=>w.sec), secTxt=R.secDup?'⚠ '+titleCase(S.sec.n||S.sec.m)+' já está premiado pelo ranking; escolha outro motorista para a linha seccionada.':
+      (sw?'Incluído: '+titleCase(sw.n)+' · '+(sw.tier+1)+'ª faixa · '+brl(sw.val)+' (a mais, sem tirar ninguém).':(S.sec.m&&!(R.n>0)?'Sem premiação no mês: a linha seccionada não recebe.':'Nenhum motorista da linha seccionada incluído.'));
+    $('sec-sum').textContent=sw||R.secDup?secTxt:'1 motorista a mais, escolhido pela gestão, na faixa definida. Não tira ninguém do ranking.'; $('sec-sum2').textContent=secTxt;
+    $('secbar').hidden=!S.tw;
     const exc=Object.values(S.exc), nEx=exc.filter(x=>x!=='Em análise').length, nAn=exc.filter(x=>x==='Em análise').length;
     $('exc-sum').textContent=(nEx||nAn)?(nEx?nEx+(nEx>1?' excluídos':' excluído'):'')+(nEx&&nAn?' · ':'')+(nAn?nAn+' em análise':'')+'. Ajuste no ranking, clicando no motorista.':'Falta, suspensão, acidente grave, veto do gestor ou análise são marcados no ranking, clicando no motorista.';
     // etapa 4: finalização
@@ -828,6 +918,8 @@ window.DP_CONFIG = {
     if(!(S.tw&&S.gc)) crit.push(['Planilhas do sistema não carregadas ('+((S.tw?1:0)+(S.gc?1:0))+' de 2).','<button type="button" class="btn sm act" data-fix="2">Importar</button>']);
     if(SCRIPT&&!IN_CLAUDE&&!getPw()) crit.push(['Informe a senha da planilha (na barra das abas).','']);
     if(IN_CLAUDE) crit.push(['Aqui no Claude o painel só consulta. Para salvar, use o painel publicado.','']);
+    if(LK) crit.unshift(['Mês fechado. Para alterar, use “Refazer apuração” no topo (pede nome e motivo).','']);
+    if(R.secDup) crit.push(['O motorista da linha seccionada já está premiado pelo ranking.','']);
     if(!crit.length){ if(!R.metaOk) warn.push('A meta não foi atingida: o mês será salvo sem premiação.'); if(nAn) warn.push(nAn>1?nAn+' motoristas estão em análise e continuam concorrendo.':'1 motorista está em análise e continua concorrendo.'); if(sameAsSaved()) warn.push(mesLabel(S.mesRef)+' já está salvo na planilha com este mesmo resultado.'); else if(isSaved(S.mesRef)) warn.push(mesLabel(S.mesRef)+' já está na planilha e será substituído.'); }
     $('fin-checks').innerHTML=SV?chk('ok','<b>'+mesLabel(S.mesRef)+'</b> está salvo na planilha. Para alterar, use “Refazer apuração”.'):
       (crit.map(c=>chk('err',c[0],c[1])).join('')+warn.map(w=>chk('warn',w)).join('')+(!crit.length?chk('ok','Tudo pronto: <b>'+R.winners.length+' premiados</b>, total de <b>'+brl(R.total)+'</b>.'):''));
@@ -852,16 +944,18 @@ window.DP_CONFIG = {
   /* ---------------- ranking e gaveta do motorista ---------------- */
   const SIT_ORD={'Elegível':0,'Em análise':1,'Baixa KM':2};
   const nf=(v,d)=>v==null||isNaN(v)?'—':fmt(v,d);
-  const curRows=()=>R.all.length?R.all:rkRows(SVM);
+  const curRows=()=>R.all.length?R.all.concat(R.secRow?[R.secRow]:[]):rkRows(SVM);
+  const posOf=x=>x.pos==null?1e9:x.pos;
   function renderTable(){
-    const tb=$('tb'), ALL=curRows(), saved=!R.all.length&&ALL.length>0;
-    $('rank-note').hidden=!saved; if(saved) $('rank-note').textContent='Mês fechado · relação completa salva em '+(SVM.salvoEm||'—')+'. Consulta somente; para alterar, refaça a apuração.';
+    const tb=$('tb'), ALL=curRows(), saved=!R.all.length&&ALL.length>0, LK=isLocked();
+    $('rank-note').hidden=!(saved||LK); if(saved||LK) $('rank-note').textContent='Mês fechado · relação completa salva em '+((HIST.months[S.mesRef]||{}).salvoEm||'—')+'. Consulta somente; para alterar, use “Refazer apuração” na aba Apuração.';
     if(!ALL.length){ tb.innerHTML='<tr><td colspan="10" class="empty">'+(HIST.months[S.mesRef]&&!S.tw?'Este mês foi salvo sem a relação completa dos motoristas. Ela é incluída no próximo salvamento (julho e agosto) ou ao refazer a apuração do mês.':'Carregue as planilhas do mês na aba Apuração para ver o ranking.')+'</td></tr>'; $('rank-cnt').textContent=''; return; }
     const q=lowk($('q').value), fs=$('f-st').value, so=$('f-sort').value;
-    let rows=ALL.filter(x=>(!q||lowk(x.n).includes(q)||x.m.includes(q))&&(!fs||(fs==='win'?x.win:fs==='exc'?!x.el&&x.st!=='Baixa KM':x.st===fs)));
-    rows=rows.slice().sort(so==='n'?(a,b)=>a.n.localeCompare(b.n,'pt-BR'):so==='st'?(a,b)=>(b.win-a.win)||((SIT_ORD[a.st]??3)-(SIT_ORD[b.st]??3))||a.pos-b.pos:so==='prize'?(a,b)=>b.prize-a.prize||a.pos-b.pos:so==='d'?(a,b)=>b.d-a.d:(a,b)=>a.pos-b.pos);
-    tb.innerHTML=rows.map(x=>{ const pill=x.win?'<span class="pill ok">Premiado</span>':x.st==='Elegível'?'<span class="pill neu">Elegível</span>':x.st==='Em análise'?'<span class="pill warn">Em análise</span>':x.st==='Baixa KM'?'<span class="pill warn">Baixa KM</span>':String(x.st).startsWith('Retirado')?'<span class="pill neu">Retirado</span>':'<span class="pill bad">Excluído</span>';
-      return '<tr tabindex="0" data-m="'+esc(x.m)+'" class="'+(x.win?'win':'')+(x.el||x.win?'':' out')+'"><td class="pos">'+x.pos+'</td><td class="l nm">'+esc(titleCase(x.n))+'<small>'+esc(x.m)+(x.st!=='Elegível'&&x.st!=='Baixa KM'&&!x.win?' · '+esc(x.st):'')+'</small></td><td class="nt">'+fmt(x.res,2)+'</td><td class="pr">'+(x.win?brl(x.prize):'—')+'</td><td class="l">'+pill+'</td><td class="sec2">'+nf(x.km,0)+'</td><td class="sec2">'+nf(x.d,2)+'</td><td class="sec2">'+nf(x.c,2)+'</td><td class="sec2">'+nf(x.s,2)+'</td><td class="sec2">'+x.g+'</td></tr>'; }).join('')||'<tr><td colspan="10" class="empty">Nenhum motorista com esse filtro.</td></tr>';
+    let rows=ALL.filter(x=>(!q||lowk(x.n).includes(q)||x.m.includes(q))&&(!fs||(fs==='win'?x.win:fs==='exc'?!x.el&&!x.win&&x.st!=='Baixa KM':x.st===fs)));
+    const nd=v=>v==null||isNaN(v)?-1e9:v;
+    rows=rows.slice().sort(so==='n'?(a,b)=>a.n.localeCompare(b.n,'pt-BR'):so==='st'?(a,b)=>(b.win-a.win)||((SIT_ORD[a.st]??3)-(SIT_ORD[b.st]??3))||posOf(a)-posOf(b):so==='prize'?(a,b)=>b.prize-a.prize||posOf(a)-posOf(b):so==='d'?(a,b)=>nd(b.d)-nd(a.d):(a,b)=>posOf(a)-posOf(b));
+    tb.innerHTML=rows.map(x=>{ const pill=x.sec?'<span class="pill ok">Seccionada</span>':x.win?'<span class="pill ok">Premiado</span>':x.st==='Elegível'?'<span class="pill neu">Elegível</span>':x.st==='Em análise'?'<span class="pill warn">Em análise</span>':x.st==='Baixa KM'?'<span class="pill warn">Baixa KM</span>':String(x.st).startsWith('Retirado')?'<span class="pill neu">Retirado</span>':'<span class="pill bad">Excluído</span>';
+      return '<tr tabindex="0" data-m="'+esc(x.m)+'" class="'+(x.win?'win':'')+(x.el||x.win?'':' out')+'"><td class="pos">'+(x.pos==null?'—':x.pos)+'</td><td class="l nm">'+esc(titleCase(x.n))+'<small>'+esc(x.m)+(x.sec?' · linha seccionada':'')+(x.st!=='Elegível'&&x.st!=='Baixa KM'&&!x.win?' · '+esc(x.st):'')+'</small></td><td class="nt">'+nf(x.res,2)+'</td><td class="pr">'+(x.win?brl(x.prize):'—')+'</td><td class="l">'+pill+'</td><td class="sec2">'+nf(x.km,0)+'</td><td class="sec2">'+nf(x.d,2)+'</td><td class="sec2">'+nf(x.c,2)+'</td><td class="sec2">'+nf(x.s,2)+'</td><td class="sec2">'+nf(x.g,0)+'</td></tr>'; }).join('')||'<tr><td colspan="10" class="empty">Nenhum motorista com esse filtro.</td></tr>';
     tb.querySelectorAll('tr[data-m]').forEach(tr=>{ const o=()=>openDriver(tr.dataset.m); tr.addEventListener('click',o); tr.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); o(); } }); });
     $('rank-cnt').textContent=rows.length+' de '+ALL.length+' motoristas · '+ALL.filter(x=>x.el).length+' elegíveis · '+(saved?(SVM.n||ALL.filter(x=>x.win).length):R.winners.length)+' premiados';
   }
@@ -876,15 +970,25 @@ window.DP_CONFIG = {
     const people=aggregatePeople(HIST.months).find(p=>p.m===x.m);
     const rowc=(n,s,w)=>'<tr><td class="l">'+n+'</td><td>'+fmt(s,2)+'</td><td>'+fmt(w*100,0)+'%</td><td><b>'+fmt(s*w,2)+'</b></td></tr>';
     const z=t=>t==null||isNaN(t)?0:t;
-    $('drawer').innerHTML='<div class="dr-h"><div><h3 id="dr-name">'+esc(titleCase(x.n))+'</h3><p>Matrícula '+esc(x.m)+' · '+x.pos+'º no ranking</p></div><button type="button" class="btn sm" id="dr-close">Fechar ✕</button></div><div class="dr-b">'+
-      '<div class="dr-sec big"><b class="num">'+fmt(x.res,2)+'</b><span>nota final'+(x.win?' · premiado com <b style="color:var(--deep)">'+brl(x.prize)+'</b>':'')+'</span></div>'+
+    const RO=!!x.saved||isLocked(), out=x.pos==null, mp='<p style="font-size:12.5px;color:var(--muted);margin-top:6px">';
+    const secOpts=R.P.vals.map((v,i)=>'<option value="'+i+'"'+(i===3?' selected':'')+'>'+(i+1)+'ª faixa · '+brl(v)+'</option>').join('');
+    const secHTML=RO?'':'<div class="dr-sec"><h4>Linha seccionada</h4>'+(x.sec?'<p style="font-size:13.5px">Premiado como o motorista a mais da linha seccionada · '+brl(x.prize)+'.</p><button type="button" class="btn sm" id="dr-sec-rm" style="margin-top:8px">Retirar da linha seccionada</button>':
+      (x.win?mp+'Já premiado pelo ranking.</p>':'<div style="display:flex;gap:8px;flex-wrap:wrap"><select id="dr-sec-t" aria-label="Faixa do prêmio">'+secOpts+'</select><button type="button" class="btn sm pri" id="dr-sec-add">Incluir como linha seccionada</button></div>'+mp+'Entra como 1 motorista a mais, sem tirar ninguém'+(S.sec.m?'. Substitui a escolha atual ('+esc(titleCase(S.sec.n||S.sec.m))+')':'')+'.</p>'))+'</div>';
+    const actHTML=RO?'<div class="dr-sec"><h4>Mês fechado</h4><p style="font-size:13.5px;color:var(--muted)">Dados salvos em '+esc((HIST.months[S.mesRef]||{}).salvoEm||'—')+'. Para mudar a situação de um motorista ou a linha seccionada, use “Refazer apuração” na aba Apuração.</p></div>':
+      (out?'':'<div class="dr-sec"><h4>Exclusão ou análise</h4><select id="dr-exc" aria-label="Situação manual"><option value="">Nenhuma · segue a regra</option>'+MOT.map(o=>'<option'+(S.exc[x.m]===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'+mp+'“Em análise” mantém o motorista concorrendo, apenas sinalizado. As demais opções o retiram do ranking do mês.</p></div>')+secHTML;
+    if(out) $('drawer').innerHTML='<div class="dr-h"><div><h3 id="dr-name">'+esc(titleCase(x.n))+'</h3><p>Matrícula '+esc(x.m)+' · linha seccionada (fora da telemetria)</p></div><button type="button" class="btn sm" id="dr-close">Fechar ✕</button></div><div class="dr-b">'+
+        '<div class="dr-sec big"><b class="num">'+brl(x.prize||0)+'</b><span>prêmio da linha seccionada · escolhido pela gestão</span></div>'+actHTML+'</div>';
+    else $('drawer').innerHTML='<div class="dr-h"><div><h3 id="dr-name">'+esc(titleCase(x.n))+'</h3><p>Matrícula '+esc(x.m)+' · '+x.pos+'º no ranking</p></div><button type="button" class="btn sm" id="dr-close">Fechar ✕</button></div><div class="dr-b">'+
+      '<div class="dr-sec big"><b class="num">'+nf(x.res,2)+'</b><span>nota final'+(x.win?' · premiado com <b style="color:var(--deep)">'+brl(x.prize)+'</b>'+(x.sec?' (linha seccionada)':''):'')+'</span></div>'+
       '<div class="dr-sec"><h4>Composição da nota</h4><div class="tw"><table class="comp num"><thead><tr><th class="l">Parte</th><th>Pontos</th><th>Peso</th><th>Contribuição</th></tr></thead><tbody>'+
       rowc('Diesel',z(x.d),P.w.d)+rowc('Eventos de consumo',z(x.c),P.w.c)+rowc('Eventos de segurança',z(x.s),P.w.s)+rowc('Gestão de consequências',x.pg,P.w.g)+'</tbody><tfoot><tr><td class="l">Nota final</td><td></td><td></td><td>'+fmt(x.res,2)+'</td></tr></tfoot></table></div></div>'+
       '<div class="dr-sec"><h4>Critérios de elegibilidade</h4><div class="kv"><span>KM rodada no mês</span><b>'+nf(x.km,0)+' km '+(x.km>=P.kmMin?'✓':'· abaixo de '+nf(P.kmMin,0))+'</b><span>Eventos de consumo · segurança</span><b>'+nf(x.ec,0)+' · '+nf(x.es,0)+'</b><span>Gestão de consequências</span><b>'+nf(x.g,0)+' pts → nota '+nf(x.pg,0)+(x.noGC?' (sem registro)':'')+'</b><span>Situação</span><b>'+(x.win?'Premiado'+(x.st==='Em análise'?' · em análise':''):esc(x.st))+'</b></div></div>'+
-      (x.saved?'<div class="dr-sec"><h4>Mês fechado</h4><p style="font-size:13.5px;color:var(--muted)">Dados salvos em '+esc((SVM&&SVM.salvoEm)||'—')+'. Para mudar a situação de um motorista, refaça a apuração do mês.</p></div>':'<div class="dr-sec"><h4>Exclusão ou análise</h4><select id="dr-exc" aria-label="Situação manual"><option value="">Nenhuma · segue a regra</option>'+MOT.map(o=>'<option'+(S.exc[x.m]===o?' selected':'')+'>'+o+'</option>').join('')+'</select><p style="font-size:12.5px;color:var(--muted);margin-top:6px">“Em análise” mantém o motorista concorrendo, apenas sinalizado. As demais opções o retiram do ranking do mês.</p></div>')+
+      actHTML+
       '<div class="dr-sec"><h4>Histórico de prêmios</h4>'+(people?'<div class="det-list">'+people.list.map(p=>'<span><b>'+mesLabel(p.key)+'</b> · '+p.pos+'º · '+brl(p.val)+(p.sec?' · seccionada':'')+'</span>').join('')+'</div><p style="font-size:13px;color:var(--muted);margin-top:8px">'+people.count+(people.count>1?' meses':' mês')+' premiado · total de '+brl(people.total)+'</p>':'<p style="font-size:13.5px;color:var(--muted)">Ainda não foi premiado nos meses salvos.</p>')+'</div></div>';
     $('dr-close').addEventListener('click',closeDriver);
     if($('dr-exc')) $('dr-exc').addEventListener('change',e=>{ if(e.target.value) S.exc[x.m]=e.target.value; else delete S.exc[x.m]; save(); render(); renderDriver(); toast(e.target.value?titleCase(x.n)+': '+e.target.value:'Situação manual removida'); });
+    if($('dr-sec-add')) $('dr-sec-add').addEventListener('click',()=>{ S.sec={m:x.m,n:x.n,t:$('dr-sec-t').value}; syncInputs(); save(); render(); renderDriver(); toast(titleCase(x.n)+' incluído como linha seccionada'); });
+    if($('dr-sec-rm')) $('dr-sec-rm').addEventListener('click',()=>{ S.sec=SEC0(); syncInputs(); save(); render(); if(curRows().some(y=>y.m===DRV)) renderDriver(); else closeDriver(); toast('Linha seccionada retirada'); });
   }
   $('scrim').addEventListener('click',closeDriver);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('drawer').hidden) closeDriver(); });
@@ -906,9 +1010,9 @@ window.DP_CONFIG = {
     [['E2',P.w.d,'Diesel'],['H2',P.w.c,'Consumo'],['J2',P.w.s,'Segurança'],['M2',P.w.g,'GC']].forEach(([a,v,n])=>{ const c=ws.getCell(a); c.value=v; c.numFmt='0%'; c.font=F({bold:true,color:{argb:C.deep}}); c.fill=fill(C.mist); c.border=box; c.alignment={horizontal:'center'}; c.note=n; });
     const hr=ws.getRow(3); hr.values=['Pos.','Matrícula','Motorista','KM','Meta (L)','Real (L)','Pont. diesel','Eventos consumo','Pont. consumo','Eventos segurança','Pont. segurança','Total eventos','Pontos GC','Tolerância','Pont. (%)','Pont GC','Resultado ponderado','Observação','Quartis']; hr.height=36;
     hr.eachCell((c,i)=>{ c.fill=fill(i<=3?C.abyss:(i<=12?C.deep:(i<=16?C.gcH:C.abyss))); c.font=F({bold:true,color:{argb:C.white},size:10}); c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=box; });
-    const secW=R.winners.find(w=>w.sec), bumped=secW?R.all.filter(x=>x.el&&!x.win&&x.rank!=null&&x.rank<=R.n).map(x=>x.m):[];
+    const secW=null, bumped=[];
     const NF=['0','@','@','#,##0.00','#,##0.00','#,##0.00','0.00','0','0.00','0','0.00','0','0','0','0.0','0','0.00','@','"R$" #,##0.00'];
-    R.all.forEach((x,i)=>{ const e=4+i, z=v=>isNaN(v)?0:v; let obs=x.st==='Elegível'?'OK':x.st; if(bumped.includes(x.m)) obs='Retirar para incluir um da seccionada: '+secW.n;
+    R.all.forEach((x,i)=>{ const e=4+i, z=v=>isNaN(v)?0:v; let obs=x.sec?'Linha seccionada (prêmio a mais)':x.st==='Elegível'?'OK':x.st;
       const row=ws.getRow(e); row.values=[i+1,x.m,x.n,z(x.km),z(x.metaL),z(x.realL),z(x.d),z(x.ec),z(x.c),z(x.es),z(x.s),{formula:'H'+e+'+J'+e,result:z(x.ec)+z(x.es)},x.g,40,
         {formula:'IF((1-(M'+e+'/N'+e+'))<0,0,(1-(M'+e+'/N'+e+')))*100',result:Math.max(0,1-x.g/40)*100},{formula:'IF(M'+e+'<='+P.gA+',100,IF(AND(M'+e+'>'+P.gA+',M'+e+'<'+P.gB+'),95,0))',result:x.pg},
         {formula:'(G'+e+'*$E$2)+($H$2*I'+e+')+(K'+e+'*$J$2)+($M$2*P'+e+')',result:x.res},obs,x.win?x.prize:'-'];
