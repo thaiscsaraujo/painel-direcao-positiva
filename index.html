@@ -364,7 +364,6 @@ tr.det td{background:#F7FBFB;text-align:left}
   <div class="wrap">
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="t-apu" aria-selected="true" aria-controls="p-apu">Apuração</button>
-      <button class="tab" role="tab" id="t-rank" aria-selected="false" aria-controls="p-rank">Ranking</button>
       <button class="tab" role="tab" id="t-hist" aria-selected="false" aria-controls="p-hist">Histórico</button>
     </div>
     <div class="sync" id="sync"><span class="dot"></span><span id="sync-t">Conectando à planilha…</span>
@@ -472,30 +471,8 @@ tr.det td{background:#F7FBFB;text-align:left}
         <div class="box2"><h4>Linha seccionada e exclusões</h4><p id="sec-sum2"></p><p id="exc-sum" style="margin-top:6px"></p><div class="sf"><button type="button" class="btn sm" id="go-rank">Ver ranking completo ↓</button></div></div>
       </aside>
     </div>
-    <div id="rank-slot"></div>
-    <div class="step-foot" id="foot-3"><button type="button" class="btn" data-next="2">← Voltar</button><span class="why" id="why-3"></span><button type="button" class="btn pri" data-next="4">Continuar para finalizar →</button></div>
-  </div>
-
-  <!-- etapa 4 -->
-  <div class="card step" data-step="4" hidden>
-    <div class="ch"><div><div class="eyb">Etapa 4 de 4</div><h2>Finalizar apuração</h2><p>Revise as pendências e grave o resultado na planilha do programa.</p></div></div>
-    <div class="fin">
-      <div class="checks" id="fin-checks" style="margin-top:0"></div>
-      <div class="actions">
-        <button type="button" class="btn pri" id="save">Salvar resultado na planilha</button>
-        <div class="confirm" id="save-ask" hidden><span id="save-ask-t"></span><button type="button" class="btn sm pri" id="save-yes">Substituir</button><button type="button" class="btn sm" id="save-no">Cancelar</button></div>
-        <div class="res-msg" id="save-msg" hidden></div>
-        <button type="button" class="btn" id="xlsx">Exportar planilha Excel</button>
-        <button type="button" class="btn" id="copy">Copiar lista de ganhadores</button>
-      </div>
-    </div>
-    <div class="step-foot"><button type="button" class="btn" data-next="3">← Voltar</button></div>
-  </div>
-</section>
-
-<!-- ===================== RANKING ===================== -->
-<section class="pane" id="p-rank" role="tabpanel" aria-labelledby="t-rank" hidden>
-  <div class="card" id="rank-card">
+    <div id="rank-slot">
+  <div class="card embedded" id="rank-card">
     <div class="ch"><div><div class="eyb">Ranking do mês</div><h2>Todos os motoristas</h2><p>Clique em um motorista para ver a composição da nota, os critérios de elegibilidade e o histórico.</p></div><button type="button" class="btn" id="xlsx2">Exportar planilha Excel</button></div>
     <div class="tools">
       <input id="q" type="search" placeholder="Buscar por nome ou matrícula" aria-label="Buscar motorista">
@@ -513,6 +490,25 @@ tr.det td{background:#F7FBFB;text-align:left}
       <thead><tr><th>Pos.</th><th class="l">Motorista</th><th>Nota</th><th>Prêmio</th><th class="l">Situação</th><th>KM</th><th>Diesel</th><th>Consumo</th><th>Segurança</th><th>GC</th></tr></thead>
       <tbody id="tb"></tbody>
     </table></div>
+  </div>
+    </div>
+    <div class="step-foot" id="foot-3"><button type="button" class="btn" data-next="2">← Voltar</button><span class="why" id="why-3"></span><button type="button" class="btn pri" data-next="4">Continuar para finalizar →</button></div>
+  </div>
+
+  <!-- etapa 4 -->
+  <div class="card step" data-step="4" hidden>
+    <div class="ch"><div><div class="eyb">Etapa 4 de 4</div><h2>Finalizar apuração</h2><p>Revise as pendências e grave o resultado na planilha do programa.</p></div></div>
+    <div class="fin">
+      <div class="checks" id="fin-checks" style="margin-top:0"></div>
+      <div class="actions">
+        <button type="button" class="btn pri" id="save">Salvar resultado na planilha</button>
+        <div class="confirm" id="save-ask" hidden><span id="save-ask-t"></span><button type="button" class="btn sm pri" id="save-yes">Substituir</button><button type="button" class="btn sm" id="save-no">Cancelar</button></div>
+        <div class="res-msg" id="save-msg" hidden></div>
+        <button type="button" class="btn" id="xlsx">Exportar planilha Excel</button>
+        <button type="button" class="btn" id="copy">Copiar lista de ganhadores</button>
+      </div>
+    </div>
+    <div class="step-foot"><button type="button" class="btn" data-next="3">← Voltar</button></div>
   </div>
 </section>
 
@@ -826,10 +822,7 @@ window.DP_CONFIG = {
   function goStep(i){ S.step=i; save(); render(); const el=document.querySelector('.step[data-step="'+i+'"]'); if(el){ const y=el.getBoundingClientRect().top+scrollY-90; if(scrollY>y) scrollTo({top:y,behavior:REDUCE?'auto':'smooth'}); } }
   document.querySelectorAll('#flow li').forEach(li=>li.querySelector('button').addEventListener('click',()=>goStep(+li.dataset.i)));
   document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.next)));
-  $('go-rank').addEventListener('click',()=>{ const c=$('rank-card'); if(c.parentNode===$('rank-slot')) c.scrollIntoView({behavior:REDUCE?'auto':'smooth',block:'start'}); else showTab('rank'); });
-  // o ranking completo é um só: fica na etapa "Conferir resultados" e volta para a aba Ranking quando ela é aberta
-  function placeRank(){ const c=$('rank-card'), inApu=$('t-apu').getAttribute('aria-selected')==='true'&&S.step===3, dest=inApu?$('rank-slot'):$('p-rank');
-    if(c.parentNode!==dest) dest.appendChild(c); c.classList.toggle('embedded',inApu); }
+  $('go-rank').addEventListener('click',()=>$('rank-card').scrollIntoView({behavior:REDUCE?'auto':'smooth',block:'start'}));
 
   /* ---------------- indicadores animados ---------------- */
   const LASTV={};
@@ -934,7 +927,7 @@ window.DP_CONFIG = {
     $('fin-checks').querySelectorAll('[data-fix]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.fix)));
     $('save').disabled=!!SV||crit.length>0; $('save').textContent=isSaved(S.mesRef)?'Atualizar resultado na planilha':'Salvar resultado na planilha';
     $('xlsx').disabled=$('xlsx2').disabled=!R.all.length;
-    renderAcc(); renderTable(); placeRank();
+    renderAcc(); renderTable();
   }
   // acumulado de todos os meses salvos, mostrado no verso de cada indicador
   function renderAcc(){
@@ -1069,9 +1062,9 @@ window.DP_CONFIG = {
   $('xlsx').addEventListener('click',exportXlsx); $('xlsx2').addEventListener('click',exportXlsx);
 
   /* ---------------- abas ---------------- */
-  function showTab(t){ ['apu','rank','hist'].forEach(k=>{ $('t-'+k).setAttribute('aria-selected',k===t); $('p-'+k).hidden=k!==t; }); placeRank(); if(t==='hist') renderHist(); try{ localStorage.setItem('dp-aba',t); }catch(e){} }
-  ['apu','rank','hist'].forEach(k=>$('t-'+k).addEventListener('click',()=>showTab(k)));
-  document.querySelector('.tabs').addEventListener('keydown',e=>{ const ks=['apu','rank','hist'], i=ks.findIndex(k=>$('t-'+k).getAttribute('aria-selected')==='true'); if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ const n=ks[(i+(e.key==='ArrowRight'?1:2))%3]; showTab(n); $('t-'+n).focus(); } });
+  function showTab(t){ ['apu','hist'].forEach(k=>{ $('t-'+k).setAttribute('aria-selected',k===t); $('p-'+k).hidden=k!==t; }); if(t==='hist') renderHist(); try{ localStorage.setItem('dp-aba',t); }catch(e){} }
+  ['apu','hist'].forEach(k=>$('t-'+k).addEventListener('click',()=>showTab(k)));
+  document.querySelector('.tabs').addEventListener('keydown',e=>{ const ks=['apu','hist'], i=ks.findIndex(k=>$('t-'+k).getAttribute('aria-selected')==='true'); if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ const n=ks[(i+1)%2]; showTab(n); $('t-'+n).focus(); } });
 
   /* ---------------- histórico ---------------- */
   function aggregatePeople(months){ const map={}; Object.keys(months).sort().forEach(k=>(months[k].winners||[]).forEach(w=>{ const p=map[w.m]||(map[w.m]={m:w.m,n:w.n,list:[],total:0}); p.n=w.n||p.n; p.list.push({key:k,pos:w.pos,val:w.val,sec:w.sec}); p.total+=w.val; }));
@@ -1127,7 +1120,7 @@ window.DP_CONFIG = {
   if(!S.tw&&!S.gc&&HIST.months[S.mesRef]&&(S.vals.kmAb===''||S.vals.kmAb==null)) fillMonth(S.mesRef);
   if(!S.step) S.step=1;
   syncInputs(); render(); renderHist();
-  try{ const a=localStorage.getItem('dp-aba'); if(a&&['apu','rank','hist'].includes(a)) showTab(a); }catch(e){}
+  try{ const a=localStorage.getItem('dp-aba'); if(a==='hist') showTab(a); }catch(e){}
   loadHist(true);
 })();
 </script>
